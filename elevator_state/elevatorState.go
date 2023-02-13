@@ -1,6 +1,6 @@
-package elevatorState
+package elevator_state
 
-import "Driver-go/elevio"
+import "project-group-77/elevio"
 
 type behavior int
 
