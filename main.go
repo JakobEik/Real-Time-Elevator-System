@@ -7,6 +7,12 @@ import (
 
 func main() {
 
+
+	// var test [5][5] int
+	// test[0][0] = 1
+	// fmt.Print(test)
+	
+
 	numFloors := 4
 
 	elevio.Init("localhost:15657", numFloors)
