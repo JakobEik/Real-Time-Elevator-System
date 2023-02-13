@@ -1,6 +1,6 @@
-package elevator_state
+package elevatorState
 
-import "project-group-77/elevio"
+import "Driver-go/elevio"
 
 type behavior int
 
@@ -19,10 +19,11 @@ type Elevator struct {
 }
 
 func InitializeElevator() Elevator {
+	requests := make([][]int, 0)
 	for floor := 0; floor < 4; floor++ {
-		requests = append(requests, make([]bool, 3))
+		requests = append(requests, make([]int, 3))
 		for button := range requests[floor] {
-			requests[floor][button] = false
+			requests[floor][button] = 0
 		}
 	}
 	return Elevator{
