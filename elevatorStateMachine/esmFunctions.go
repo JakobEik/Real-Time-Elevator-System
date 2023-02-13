@@ -1,6 +1,0 @@
-package elevatorStateMachine
-
-import(
-	"ftm"
-)
-
