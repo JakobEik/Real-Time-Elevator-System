@@ -1,5 +1,3 @@
-module Driver-go
+module project-group-77
 
-go 1.16
-require Driver-go v0.0.0
-replace Driver-go => ./Driver-go
+go 1.19
