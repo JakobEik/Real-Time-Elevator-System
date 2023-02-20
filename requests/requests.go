@@ -130,7 +130,7 @@ func requests_shouldStop(e Elevator) int {
 	}
 }
 
-func requests_shouldClearImmediately(e Elevator, btn_floor int, btn_type Button) int {
+/*func requests_shouldClearImmediately(e Elevator, btn_floor int, btn_type Button) int {
 	switch e.config.clearRequestVariant {
 	case CV_All:
 		return BoolToInt(e.floor == btn_floor)
@@ -173,7 +173,7 @@ func requests_clearAtCurrentFloor(e Elevator) Elevator {
 	default:
 	}
 	return e
-}
+}*/
 
 func BoolToInt(b bool) int {
 	if b {

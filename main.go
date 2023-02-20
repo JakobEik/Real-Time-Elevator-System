@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
+	"project-group-77/elevator"
 	"project-group-77/elevio"
 )
+
+var elevatorState = elevator.UninitializedElevator()
 
 func main() {
 
@@ -27,9 +30,7 @@ func main() {
 	for {
 		select {
 		case a := <-drv_buttons:
-			fmt.Printf("%+v\n", a)
-			elevio.SetButtonLamp(a.Button, a.Floor, true)
-
+			onButtonPress(a)
 		case a := <-drv_floors:
 			fmt.Printf("%+v\n", a)
 			if a == numFloors-1 {
@@ -56,4 +57,23 @@ func main() {
 			}
 		}
 	}
+}
+
+func onButtonPress(btn_event elevio.ButtonEvent) {
+	fmt.Printf("%+v\n", btn_event)
+	elevio.SetButtonLamp(btn_event.Button, btn_event.Floor, true)
+
+	btnFloor := btn_event.Floor
+	btnType := btn_event.Button
+
+	fmt.Printf("\n\n%s(%d, %s)\n", "handleButtonPress", btnFloor, btnType.String())
+	elevator.ElevPrint(elevatorState)
+	if elevatorState.Floor > btnFloor {
+		elevio.SetMotorDirection(elevio.MD_Down)
+	} else if elevatorState.Floor < btnFloor {
+		elevio.SetMotorDirection(elevio.MD_Up)
+	} else {
+		elevio.SetMotorDirection(elevio.MD_Stop)
+	}
+
 }

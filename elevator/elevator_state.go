@@ -43,12 +43,12 @@ func ebToString(eb ElevatorBehaviour) string {
 }
 
 type Elevator struct {
-	floor     int
-	dirn      Direction
-	behaviour ElevatorBehaviour
-	requests  [4][3]bool
-	doorTimer Timer
-	config    ElevatorConfig
+	Floor     int
+	Dirn      Direction
+	Behaviour ElevatorBehaviour
+	Requests  [4][3]bool
+	DoorTimer Timer
+	Config    ElevatorConfig
 }
 
 type ElevatorConfig struct {
@@ -64,13 +64,13 @@ const (
 	CV_All
 )
 
-func elevPrint(es Elevator) {
+func ElevPrint(es Elevator) {
 	fmt.Println("  +--------------------+")
 	fmt.Printf(
 		"  |floor = %-2d          |\n"+
 			"  |dirn  = %-12.12s|\n"+
 			"  |behav = %-12.12s|\n",
-		es.floor,
+		es.Floor,
 		dirnToString(es.dirn),
 		ebToString(es.behaviour),
 	)
@@ -94,9 +94,9 @@ func elevPrint(es Elevator) {
 	fmt.Println("  +--------------------+")
 }
 
-func elevUninitialized() Elevator {
+func UninitializedElevator() Elevator {
 	return Elevator{
-		floor:     -1,
+		Floor:     -1,
 		dirn:      D_Stop,
 		behaviour: EB_Idle,
 		config: ElevatorConfig{
