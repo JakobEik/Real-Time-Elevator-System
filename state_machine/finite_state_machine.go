@@ -1,18 +1,18 @@
 package state_machine
 
 import (
+	"./elevator_io"
 	"./requests"
 	"fmt"
 	"project-group-77/elevator"
-	"project-group-77/elevio"
 	"time"
 )
 
 func main() {
 	// initialize elevator and output device
 
-	var elevatorState elevator.Elevator = elevator.UninitializedElevator()
-	/*outputDevice := elevator_io.ElevioGetOutputDevice()
+	var e elevator.Elevator = elevator.UninitializedElevator()
+	outputDevice := elevator_io.ElevioGetOutputDevice()
 
 	// load config from file
 	config, err := LoadConfig("elevator.con")
@@ -20,11 +20,11 @@ func main() {
 		fmt.Println("Error loading config:", err)
 		return
 	}
-	e.Config = config*/
+	e.Config = config
 
 	// set initial motor direction and behavior
-	elevio.SetMotorDirection(elevio.MD_Down)
-	elevatorState.D = elevio.MD_Down
+	outputDevice.MotorDirection(elevator_io.MdDown)
+	e.Dirn = elevator_io.MdDown
 	e.Behaviour = elevator.EbMoving
 
 	// continuously listen for elevator events
@@ -75,7 +75,7 @@ func handleButtonPress(buttonPress elevator_io.ButtonPress, e *elevator.Elevator
 	btnType := buttonPress.Button
 
 	fmt.Printf("\n\n%s(%d, %s)\n", "handleButtonPress", btnFloor, btnType.String())
-	elevator.ElevPrint(*e)
+	elevator.Print(*e)
 
 	switch e.Behaviour {
 	case elevator.EbDoorOpen:

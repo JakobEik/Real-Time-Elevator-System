@@ -71,8 +71,8 @@ func ElevPrint(es Elevator) {
 			"  |dirn  = %-12.12s|\n"+
 			"  |behav = %-12.12s|\n",
 		es.Floor,
-		dirnToString(es.dirn),
-		ebToString(es.behaviour),
+		dirnToString(es.Dirn),
+		ebToString(es.Behaviour),
 	)
 	fmt.Println("  +--------------------+")
 	fmt.Println("  |  | up  | dn  | cab |")
@@ -82,7 +82,7 @@ func ElevPrint(es Elevator) {
 			if (f == 3 && btn == int(B_HallUp)) || (f == 0 && btn == int(B_HallDown)) {
 				fmt.Print("|     ")
 			} else {
-				if es.requests[f][btn] {
+				if es.Requests[f][btn] {
 					fmt.Print("|  #  ")
 				} else {
 					fmt.Print("|  -  ")
@@ -97,9 +97,9 @@ func ElevPrint(es Elevator) {
 func UninitializedElevator() Elevator {
 	return Elevator{
 		Floor:     -1,
-		dirn:      D_Stop,
-		behaviour: EB_Idle,
-		config: ElevatorConfig{
+		Dirn:      D_Stop,
+		Behaviour: EB_Idle,
+		Config: ElevatorConfig{
 			clearRequestVariant: CV_All,
 			doorOpenDuration_s:  3.0,
 		},

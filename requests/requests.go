@@ -173,11 +173,12 @@ func requests_clearAtCurrentFloor(e Elevator) Elevator {
 	default:
 	}
 	return e
-}*/
+}
 
 func BoolToInt(b bool) int {
 	if b {
 		return 1
 	}
 	return 0
-}
+}*/
+bool

@@ -1,9 +1,6 @@
 package elevio
 
-import (
-	"go/types"
-	"time"
-)
+import "time"
 import "sync"
 import "net"
 import "fmt"
@@ -51,7 +48,7 @@ func Init(addr string, numFloors int) {
 	_initialized = true
 }
 
-func SetMotorDirection(dir MotorDirection) types.Nil {
+func SetMotorDirection(dir MotorDirection) {
 	write([4]byte{1, byte(dir), 0, 0})
 }
 
