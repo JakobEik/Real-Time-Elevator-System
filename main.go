@@ -1,25 +1,42 @@
 package main
 
 import (
+	"Project/config"
+	"Project/driver"
 	"Project/elevator"
 )
 
 func main() {
-	drv_buttons := make(chan finiteStateMachine.ButtonEvent)
-	drv_floors := make(chan int)
-	drv_obstr := make(chan bool)
-	drv_stop := make(chan bool)
-	ch_doRequest := make(chan bool)
-	ch_floorArrival := make(chan int)
-	ch_newRequest := make(chan bool)
-	ch_Obstruction := make(chan bool)
-	channel_DoorTimer := make(chan bool)
+	// channels for order assigner
+	ch_requestLocalState := make(chan elevator.ElevatorState)
+	ch_currentLocalState := make(chan elevator.ElevatorState)
 
-	go elevator.PollButtons(drv_buttons)
-	go elevator.PollFloorSensor(drv_floors)
-	go elevator.PollObstructionSwitch(drv_obstr)
-	go elevator.PollStopButton(drv_stop)
-	elevator.Fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
+	// channels for Network
+	//ch_peerUpdate := make(chan bruh)
+	//ch_stateToNetwork := make(chan globalState)
+	//ch_stateFromNetwork := make(chan globalState)
+
+	// channels for order distributor
+	ch_localStateUpdated := make(chan config.Order)
+	ch_doOrder := make(chan config.Order)
+	ch_newOrder := make(chan config.Order)
+
+	// channels for FSM
+	ch_newCabCall := make(chan config.Order)
+	ch_floorArrival := make(chan int)
+	ch_obstruction := make(chan bool)
+	ch_stop := make(chan bool)
+
+	// channels for Elevio Driver
+	ch_buttons := make(chan driver.ButtonEvent)
+
+	//channel_DoorTimer := make(chan bool)
+
+	go driver.PollButtons(ch_buttons)
+	go driver.PollFloorSensor(ch_floorArrival)
+	go driver.PollObstructionSwitch(ch_obstruction)
+	go driver.PollStopButton(ch_stop)
+	elevator.Fsm(ch_doOrder, ch_newCabCall, ch_floorArrival, ch_obstruction, ch_stop)
 	//request_executor.fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 }
 
