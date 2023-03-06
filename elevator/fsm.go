@@ -1,5 +1,7 @@
 package elevator
 
+import "Project/config"
+
 /* Put in config!
 var (
 	elev         Elevator
@@ -13,12 +15,11 @@ const (
 )*/
 
 func Fsm(
-	ch_orderChan chan ButtonEvent,
-	ch_doRequest chan bool,
-	ch_floorArrival chan int,
-	ch_newRequest chan bool,
-	ch_Obstruction chan bool,
-	channel_DoorTimer chan bool) {
+	ch_doOrder <-chan config.Order,
+	ch_newCabCall <-chan config.Order,
+	ch_floorArrival <-chan int,
+	ch_Obstruction <-chan bool,
+	ch_stop <-chan bool) {
 
 	elev := InitElev()
 
