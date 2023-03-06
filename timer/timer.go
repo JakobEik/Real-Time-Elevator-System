@@ -1,11 +1,12 @@
 package timer
 
 import (
+	"Project/config"
 	"time"
 )
 
-func DoorTimer(sec int, channel_DoorTimer chan<- bool) {
-	SleepTime := time.Duration(sec) * time.Second
+func DoorTimer(channel_DoorTimer chan<- bool) {
+	SleepTime := time.Duration(config.DoorOpenDuration) * time.Second
 	time.Sleep(SleepTime)
 
 	channel_DoorTimer <- true

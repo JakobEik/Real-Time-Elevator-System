@@ -1,3 +1,3 @@
-module project-group-77
+module Project
 
 go 1.19
