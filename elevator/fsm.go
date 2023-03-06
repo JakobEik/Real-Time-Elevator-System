@@ -59,7 +59,42 @@ func Fsm(
 
 func onNewOrderEvent(order config.Order, elev ElevatorState) {
 	//TODO: IMPLEMENT
+	floor := order.Floor
+	button := order.Button
+	// Different states
+	switch elev.behavior {
+	// If idle, go to floor and open door
+	case config.Idle:
+		if floor == elev.floor {
+			driver.SetDoorOpenLamp(true)
+			time.Sleep(config.DoorOpenDuration * time.Second)
+			driver.SetDoorOpenLamp(false)
+		} else {
+			if floor > elev.floor {
+				driver.SetMotorDirection(driver.MD_Up)
+			} else {
+				driver.SetMotorDirection(driver.MD_Down)
+			}
+		}
 
+	case config.Moving:
+		// If moving, check if order is in the same direction
+		if elev.direction == driver.MD_Up && floor > elev.floor {
+			elev.orders[floor][button] = true
+		} else if elev.direction == driver.MD_Down && floor < elev.floor {
+			elev.orders[floor][button] = true
+		}
+		// If not, add order to queue
+		elev.orders[floor][button] = true
+
+	case config.DoorOpen:
+		// If door open, add order to queue
+		elev.orders[floor][button] = true
+
+	default: // Should never happen
+		panic("Invalid state")
+
+	}
 }
 
 func onFloorArrivalEvent(floor int, elev ElevatorState) {
