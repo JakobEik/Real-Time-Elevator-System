@@ -7,17 +7,6 @@ import (
 	"time"
 )
 
-/* Put in config!
-var (
-	elev         Elevator
-	doorOpenTime = 3
-)
-const (
-	btnPress Events = iota
-	onFloorArrival
-	timerTimedOut
-)*/
-
 func Fsm(
 	ch_doOrder <-chan config.Order,
 	ch_newCabCall <-chan config.Order,
@@ -82,7 +71,7 @@ func onNewOrderEvent(order config.Order, elev ElevatorState) {
 		case config.DoorOpen:
 			driver.SetDoorOpenLamp(true)
 			time.Sleep(time.Second * config.DoorOpenDuration)
-			clearAtCurrentFloor(elev, floor)
+			clearAtCurrentFloor(elev)
 		case config.Moving:
 			driver.SetMotorDirection(elev.direction)
 		}
@@ -90,7 +79,7 @@ func onNewOrderEvent(order config.Order, elev ElevatorState) {
 }
 
 func onFloorArrivalEvent(floor int, elev ElevatorState) {
-	if requests_shouldStop(elev) {
+	if shouldStop(elev) {
 		driver.SetMotorDirection(driver.MD_Stop)
 		driver.SetDoorOpenLamp(true)
 		// Reset doortimer
