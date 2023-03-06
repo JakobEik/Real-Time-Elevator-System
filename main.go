@@ -8,8 +8,8 @@ import (
 
 func main() {
 	// channels for order assigner
-	ch_requestLocalState := make(chan elevator.ElevatorState)
-	ch_currentLocalState := make(chan elevator.ElevatorState)
+	//ch_requestLocalState := make(chan elevator.ElevatorState)
+	//ch_currentLocalState := make(chan elevator.ElevatorState)
 
 	// channels for Network
 	//ch_peerUpdate := make(chan bruh)
@@ -17,26 +17,26 @@ func main() {
 	//ch_stateFromNetwork := make(chan globalState)
 
 	// channels for order distributor
-	ch_localStateUpdated := make(chan config.Order)
-	ch_doOrder := make(chan config.Order)
-	ch_newOrder := make(chan config.Order)
+	//ch_localStateUpdated := make(chan config.Order)
+	//ch_doOrder := make(chan config.Order)
+	//ch_newOrder := make(chan config.Order)
 
 	// channels for FSM
-	ch_newCabCall := make(chan config.Order)
-	ch_floorArrival := make(chan int)
-	ch_obstruction := make(chan bool)
+	ch_newCabCall := make(chan config.Order, 100)
+	ch_floorArrival := make(chan int,100)
+	ch_obstruction := make(chan bool, 100)
 	ch_stop := make(chan bool)
 
 	// channels for Elevio Driver
-	ch_buttons := make(chan driver.ButtonEvent)
+	ch_buttons := make(chan driver.ButtonEvent,100)
 
 	//channel_DoorTimer := make(chan bool)
-
+	driver.Init("localhost:15657", 4)
 	go driver.PollButtons(ch_buttons)
 	go driver.PollFloorSensor(ch_floorArrival)
 	go driver.PollObstructionSwitch(ch_obstruction)
 	go driver.PollStopButton(ch_stop)
-	elevator.Fsm(ch_doOrder, ch_newCabCall, ch_floorArrival, ch_obstruction, ch_stop)
+	elevator.Fsm(ch_buttons, ch_newCabCall, ch_floorArrival, ch_obstruction, ch_stop)
 	//request_executor.fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 }
 
@@ -70,7 +70,8 @@ func main() {
 		case a := <-drv_buttons:
 			fmt.Println("BUTTON:", a)
 			onButtonPress(a, requestsChan)
-		case request := <-requestsChan:
+		case r
+Project/elevator.Fsm(0xc0000a8700, 0xc0000a8000, 0xc0000ac000, 0xc0000ae000, 0xc00002a240)equest := <-requestsChan:
 			fmt.Println("NEW REQUEST", request)
 			onNewRequest(request)
 		case a := <-drv_floors:
@@ -109,7 +110,8 @@ func onNewRequest(floor int) {
 	fmt.Println("current:", currentFloor, ", req:", floor)
 
 	if floor < currentFloor {
-		elevio_driver.SetMotorDirection(elevio_driver.MD_Down)
+		elevio
+Project/elevator.Fsm(0xc0000a8700, 0xc0000a8000, 0xc0000ac000, 0xc0000ae000, 0xc00002a240)_driver.SetMotorDirection(elevio_driver.MD_Down)
 	} else if floor > currentFloor {
 		elevio_driver.SetMotorDirection(elevio_driver.MD_Up)
 	}

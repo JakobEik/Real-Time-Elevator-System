@@ -102,19 +102,19 @@ func shouldClearImmediatly(e ElevatorState, floor int, btn_type c.ButtonType) bo
 		(e.direction == driver.MD_Stop || btn_type == c.Cab)
 }
 
-func clearAtCurrentFloor(e ElevatorState) {
+func clearAtCurrentFloor(e *ElevatorState) {
 	//TODO: IMPLEMENT
 	e.orders[e.floor][c.Cab] = false
 	switch e.direction {
 	case driver.MD_Up:
-		if !orders_above(e) && !e.orders[e.floor][c.HallUp] {
+		if !orders_above(*e) && !e.orders[e.floor][c.HallUp] {
 			e.orders[e.floor][c.HallDown] = false
 		}
 		e.orders[e.floor][c.HallUp] = false
 		break
 
 	case driver.MD_Down:
-		if !orders_below(e) && !e.orders[e.floor][c.HallDown] {
+		if !orders_below(*e) && !e.orders[e.floor][c.HallDown] {
 			e.orders[e.floor][c.HallUp] = false
 		}
 		e.orders[e.floor][c.HallDown] = false
