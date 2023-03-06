@@ -87,8 +87,6 @@ func onNewOrderEvent(order config.Order, elev ElevatorState) {
 			driver.SetMotorDirection(elev.direction)
 		}
 	}
-
-	}
 }
 
 func onFloorArrivalEvent(floor int, elev ElevatorState) {
