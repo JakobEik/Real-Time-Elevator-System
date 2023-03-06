@@ -33,6 +33,10 @@ type ButtonEvent struct {
 	Button ButtonType
 }
 
+type Driver interface {
+	SetMotorDirection(direction MotorDirection)
+}
+
 func Init(addr string, numFloors int) {
 	if _initialized {
 		fmt.Println("Driver already initialized!")
@@ -48,7 +52,7 @@ func Init(addr string, numFloors int) {
 	_initialized = true
 }
 
-func SetMotorDirection(dir MotorDirection) {
+func setMotorDirection(dir MotorDirection) {
 	write([4]byte{1, byte(dir), 0, 0})
 }
 
