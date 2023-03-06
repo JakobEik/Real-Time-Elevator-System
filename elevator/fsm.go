@@ -12,7 +12,6 @@ var (
 	elev         Elevator
 	doorOpenTime = 3
 )
-
 const (
 	btnPress Events = iota
 	onFloorArrival
@@ -88,15 +87,47 @@ func onNewOrderEvent(order config.Order, elev ElevatorState) {
 			driver.SetMotorDirection(elev.direction)
 		}
 	}
-
 }
 
 func onFloorArrivalEvent(floor int, elev ElevatorState) {
+	if requests_shouldStop(elev) {
+		driver.SetMotorDirection(driver.MD_Stop)
+		driver.SetDoorOpenLamp(true)
+		// Reset doortimer
+		time.Sleep(3 * time.Second)
+		driver.SetDoorOpenLamp(false)
+
+	} else { // Should continue
+		if elev.floor < floor {
+			driver.SetMotorDirection(driver.MD_Up)
+		} else {
+			driver.SetMotorDirection(driver.MD_Down)
+		}
+	}
 	//TODO: IMPLEMENT
 }
 
 func onStopEvent(stop bool, elev ElevatorState) {
 	//TODO: IMPLEMENT
+	// Clear all requests and go to lowest floor
+	if stop {
+		driver.SetMotorDirection(driver.MD_Down)
+		for {
+			floor := elev.floor
+			if floor != 0 {
+				driver.SetMotorDirection(driver.MD_Down)
+			} else {
+				// Clear all orders
+				for floor := 0; floor < config.N_FLOORS; floor++ {
+					for button := range elev.orders[floor] {
+						elev.orders[floor][button] = false
+					}
+				}
+				driver.SetMotorDirection(driver.MD_Stop)
+				break
+			}
+		}
+	}
 }
 
 func onObstructionEvent(obstruction bool, elev ElevatorState) {
