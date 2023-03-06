@@ -37,7 +37,7 @@ func orders_here(e ElevatorState) bool {
 	return false
 }
 
-func chooseElevDirection(e ElevatorState) (driver.MotorDirection, c.Behaviour) {
+func chooseElevDirection(e ElevatorState) (driver.MotorDirection, c.Behavior) {
 	switch e.direction {
 	case driver.MD_Up:
 		if orders_above(e) {

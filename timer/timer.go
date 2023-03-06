@@ -6,9 +6,7 @@ import (
 )
 
 func DoorTimer(channel_DoorTimer chan<- bool) {
-	SleepTime := time.Duration(config.DoorOpenDuration) * time.Second
-	time.Sleep(SleepTime)
-
+	time.Sleep(time.Second * config.DoorOpenDuration)
 	channel_DoorTimer <- true
 }
 
