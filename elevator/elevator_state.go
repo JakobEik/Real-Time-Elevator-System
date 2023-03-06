@@ -23,17 +23,10 @@ func InitElev() ElevatorState {
 	}
 
 	return ElevatorState{
-<<<<<<< HEAD
-		Floor:    0,
-		Dir:      driver.MD_Stop,
-		Requests: requests,
-		Behave:   Idle}
-=======
 		floor:     0,
 		direction: driver.MD_Stop,
 		orders:    orders,
 		behavior:  config.Idle}
->>>>>>> 24730c3bf5465b88340b7bbd88ff4f5fdfcf6731
 
 }
 

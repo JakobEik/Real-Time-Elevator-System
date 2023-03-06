@@ -3,7 +3,6 @@ package elevator
 import (
 	"Project/config"
 	"Project/driver"
-	"Project/timer"
 	"time"
 )
 
