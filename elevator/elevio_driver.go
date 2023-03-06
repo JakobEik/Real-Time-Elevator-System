@@ -1,4 +1,4 @@
-package elevio_driver
+package elevator
 
 import "time"
 import "sync"

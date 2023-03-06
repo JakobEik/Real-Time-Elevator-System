@@ -1,4 +1,4 @@
-package requests
+package elevator
 
 import (
 	"project-group-77/config"

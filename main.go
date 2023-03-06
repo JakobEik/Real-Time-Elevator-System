@@ -1,12 +1,11 @@
 package main
 
 import (
-	"project-group-77/elevio_driver"
-	finiteStateMachine "project-group-77/request_executor"
+	finiteStateMachine "project-group-77/elevator"
 )
 
 func main() {
-	drv_buttons := make(chan elevio_driver.ButtonEvent)
+	drv_buttons := make(chan finiteStateMachine.ButtonEvent)
 	drv_floors := make(chan int)
 	drv_obstr := make(chan bool)
 	drv_stop := make(chan bool)
@@ -16,11 +15,11 @@ func main() {
 	ch_Obstruction := make(chan bool)
 	channel_DoorTimer := make(chan bool)
 
-	go elevio_driver.PollButtons(drv_buttons)
-	go elevio_driver.PollFloorSensor(drv_floors)
-	go elevio_driver.PollObstructionSwitch(drv_obstr)
-	go elevio_driver.PollStopButton(drv_stop)
-	finiteStateMachine.Fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
+	go finiteStateMachine.PollButtons(drv_buttons)
+	go finiteStateMachine.PollFloorSensor(drv_floors)
+	go finiteStateMachine.PollObstructionSwitch(drv_obstr)
+	go finiteStateMachine.PollStopButton(drv_stop)
+	elevator_state.Fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 	//request_executor.fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 }
 

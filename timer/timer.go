@@ -1,21 +1,17 @@
 package timer
 
-import(
+import (
 	"time"
 )
 
-func DoorTimer(sec int, channel_DoorTimer chan<- bool){
-	SleepTime := time.Duration(sec)*time.Second
+func DoorTimer(sec int, channel_DoorTimer chan<- bool) {
+	SleepTime := time.Duration(sec) * time.Second
 	time.Sleep(SleepTime)
 
 	channel_DoorTimer <- true
 }
 
-
-
-
-
-/*package Timer
+/*package timer
 
 import (
 	"syscall"
