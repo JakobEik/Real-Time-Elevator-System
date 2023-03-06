@@ -124,6 +124,12 @@ func onStopEvent(stop bool, elev ElevatorState) {
 			if floor != 0 {
 				driver.SetMotorDirection(driver.MD_Down)
 			} else {
+				// Clear all orders
+				for floor := 0; floor < config.N_FLOORS; floor++ {
+					for button := range elev.orders[floor] {
+						elev.orders[floor][button] = false
+					}
+				}
 				driver.SetMotorDirection(driver.MD_Stop)
 				break
 			}
