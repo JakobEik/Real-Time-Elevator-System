@@ -3,7 +3,6 @@ package elevator
 import (
 	"Project/config"
 	"Project/driver"
-	"fmt"
 )
 
 /* Put in config!
@@ -22,7 +21,7 @@ func Fsm(
 	ch_doOrder <-chan config.Order,
 	ch_newCabCall <-chan config.Order,
 	ch_floorArrival <-chan int,
-	ch_Obstruction <-chan bool,
+	ch_obstruction <-chan bool,
 	ch_stop <-chan bool) {
 
 	elev := InitElev()
@@ -75,27 +74,36 @@ func Fsm(
 
 }
 
-func onFloorArrival(floor int, state ElevatorState){
+func onNewOrderEvent(order config.Order) {
+	//TODO: IMPLEMENT
 	switch {
-	case state.Behave == config.Moving:
-		if requests_shouldStop(floor) {
-			driver.SetMotorDirection(driver.MD_Stop)
-			driver.SetDoorOpenLamp(true)
-
-			state.Behave = config.DoorOpen
+	case elev.Behaviour == ele:
+		if elev.Floor == order.Floor {
+			// Reset doortimer
 		} else {
-			// continue moving
-			state.Floor = floor
+			// Set order at this point to "true"
 		}
-	default:
-		// print erro
-		fmt.Print("Error: onFloorArrival() called when behaviour is not Moving")
+	case elev.Behaviour == Idle:
+		// blablabla
+
+	case elev.Behaviour == DoorOpen:
+
 	}
 }
 
-func doOrder(){
-	// Check if order is valid
-	// Check if order is already in queue
-	// If not, add order to queue
-	// If yes, do nothing
+func onFloorArrivalEvent(floor int) {
+	//TODO: IMPLEMENT
+	elev.Floor = floor
+	switch {
+	case elev.Behaviour == Moving:
+
+	}
+}
+
+func onStopEvent(stop bool) {
+	//TODO: IMPLEMENT
+}
+
+func onObstructionEvent(obstruction bool) {
+	//TODO: IMPLEMENT
 }
