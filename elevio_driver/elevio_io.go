@@ -1,4 +1,4 @@
-package elevio
+package elevio_driver
 
 import "time"
 import "sync"
