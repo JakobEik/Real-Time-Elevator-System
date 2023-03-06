@@ -82,7 +82,7 @@ func onFloorArrivalEvent(floor int, elev ElevatorState) {
 		// Reset doortimer
 		time.Sleep(3 * time.Second)
 		driver.SetDoorOpenLamp(false)
-		
+
 	} else { // Should continue
 		if elev.Floor < floor {
 			driver.SetMotorDirection(driver.MD_Up)
