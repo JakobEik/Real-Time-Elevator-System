@@ -2,6 +2,7 @@ package elevator
 
 import (
 	c "Project/config"
+	"Project/driver"
 )
 
 func orders_above(e ElevatorState) bool {
@@ -36,7 +37,7 @@ func orders_here(e ElevatorState) bool {
 	return false
 }
 
-func chooseElevDirection(e ElevatorState) c.DirectionBehaviourPair {
+func chooseElevDirection(e ElevatorState) (driver.MotorDirection, c.Behavior) {
 	switch e.direction {
 	case D_Up:
 		if orders_above(e) {

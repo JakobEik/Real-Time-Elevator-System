@@ -3,6 +3,7 @@ package elevator
 import (
 	"Project/config"
 	"Project/driver"
+	"fmt"
 	"time"
 )
 
@@ -58,41 +59,34 @@ func Fsm(
 }
 
 func onNewOrderEvent(order config.Order, elev ElevatorState) {
-	//TODO: IMPLEMENT
 	floor := order.Floor
-	button := order.Button
-	// Different states
+	btn_type := order.Button
+	fmt.Printf("\n\n%s(%d, %s)\n", "New Order Event", floor, btn_type)
+	elevPrint(elev)
+
 	switch elev.behavior {
-	// If idle, go to floor and open door
-	case config.Idle:
-		if floor == elev.floor {
-			driver.SetDoorOpenLamp(true)
-			time.Sleep(config.DoorOpenDuration * time.Second)
-			driver.SetDoorOpenLamp(false)
-		} else {
-			if floor > elev.floor {
-				driver.SetMotorDirection(driver.MD_Up)
-			} else {
-				driver.SetMotorDirection(driver.MD_Down)
-			}
-		}
-
-	case config.Moving:
-		// If moving, check if order is in the same direction
-		if elev.direction == driver.MD_Up && floor > elev.floor {
-			elev.orders[floor][button] = true
-		} else if elev.direction == driver.MD_Down && floor < elev.floor {
-			elev.orders[floor][button] = true
-		}
-		// If not, add order to queue
-		elev.orders[floor][button] = true
-
 	case config.DoorOpen:
-		// If door open, add order to queue
-		elev.orders[floor][button] = true
-
-	default: // Should never happen
-		panic("Invalid state")
+		if shouldClearImmediatly(elev, floor, btn_type) {
+			time.Sleep(time.Second * config.DoorOpenDuration)
+		} else {
+			elev.orders[floor][btn_type] = true
+		}
+	case config.Moving:
+		elev.orders[floor][btn_type] = true
+	case config.Idle:
+		elev.orders[floor][btn_type] = true
+		direction, behavior := chooseElevDirection(elev)
+		elev.direction = direction
+		elev.behavior = behavior
+		switch elev.behavior {
+		case config.DoorOpen:
+			driver.SetDoorOpenLamp(true)
+			time.Sleep(time.Second * config.DoorOpenDuration)
+			clearAtCurrentFloor(elev, floor)
+		case config.Moving:
+			driver.SetMotorDirection(elev.direction)
+		}
+	}
 
 	}
 }
@@ -112,6 +106,7 @@ func onFloorArrivalEvent(floor int, elev ElevatorState) {
 			driver.SetMotorDirection(driver.MD_Down)
 		}
 	}
+	//TODO: IMPLEMENT
 }
 
 func onStopEvent(stop bool, elev ElevatorState) {
