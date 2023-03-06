@@ -7,19 +7,8 @@ import (
 	"time"
 )
 
-/* Put in config!
-var (
-	elev         Elevator
-	doorOpenTime = 3
-)
-const (
-	btnPress Events = iota
-	onFloorArrival
-	timerTimedOut
-)*/
-
 func Fsm(
-	ch_doOrder <-chan config.Order,
+	ch_doOrder <-chan driver.ButtonEvent,
 	ch_newCabCall <-chan config.Order,
 	ch_floorArrival <-chan int,
 	ch_obstruction <-chan bool,
@@ -42,7 +31,8 @@ func Fsm(
 
 	for {
 		select {
-		case order := <-ch_doOrder:
+		case btn := <-ch_doOrder:
+			order := config.Order{btn.Floor, config.ButtonType(btn.Button)}
 			onNewOrderEvent(order, elev)
 		case order := <-ch_newCabCall:
 			onNewOrderEvent(order, elev)
@@ -61,8 +51,9 @@ func Fsm(
 func onNewOrderEvent(order config.Order, elev ElevatorState) {
 	floor := order.Floor
 	btn_type := order.Button
-	fmt.Printf("\n\n%s(%d, %s)\n", "New Order Event", floor, btn_type)
-	elevPrint(elev)
+	//fmt.Printf("\n\n%s(%d, %s)\n", "New Order Event", floor, btn_type)
+	//elevPrint(elev)
+	
 
 	switch elev.behavior {
 	case config.DoorOpen:
@@ -82,16 +73,24 @@ func onNewOrderEvent(order config.Order, elev ElevatorState) {
 		case config.DoorOpen:
 			driver.SetDoorOpenLamp(true)
 			time.Sleep(time.Second * config.DoorOpenDuration)
-			clearAtCurrentFloor(elev, floor)
+			clearAtCurrentFloor(&elev)
 		case config.Moving:
 			driver.SetMotorDirection(elev.direction)
 		}
 	}
+	
+	println("   UP  DOWN  CAB")
+	fmt.Println(elev.orders[3])
+	fmt.Println(elev.orders[2])
+	fmt.Println(elev.orders[1])
+	fmt.Println(elev.orders[0])
+	println()
 }
 
 func onFloorArrivalEvent(floor int, elev ElevatorState) {
-	if requests_shouldStop(elev) {
+	if shouldStop(elev) {
 		driver.SetMotorDirection(driver.MD_Stop)
+		clearAtCurrentFloor(&elev)
 		driver.SetDoorOpenLamp(true)
 		// Reset doortimer
 		time.Sleep(3 * time.Second)
@@ -105,6 +104,7 @@ func onFloorArrivalEvent(floor int, elev ElevatorState) {
 		}
 	}
 	//TODO: IMPLEMENT
+	
 }
 
 func onStopEvent(stop bool, elev ElevatorState) {
