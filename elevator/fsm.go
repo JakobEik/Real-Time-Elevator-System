@@ -72,7 +72,7 @@ func onFloorArrivalEvent(floor int, elev ElevatorState) {
 		driver.SetDoorOpenLamp(false)
 
 	} else { // Should continue
-		if elev.Floor < floor {
+		if elev.floor < floor {
 			driver.SetMotorDirection(driver.MD_Up)
 		} else {
 			driver.SetMotorDirection(driver.MD_Down)
