@@ -7,8 +7,8 @@ const N_BUTTONS = 3
 const DoorOpenDuration = 3
 
 type DirectionBehaviourPair struct {
-	direction driver.MotorDirection
-	behaviour Behaviour
+	Direction driver.MotorDirection
+	Behaviour Behaviour
 }
 
 type RequestState int

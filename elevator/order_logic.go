@@ -2,11 +2,12 @@ package elevator
 
 import (
 	c "Project/config"
+	"Project/driver"
 )
 
 func orders_above(e ElevatorState) bool {
-	for f := e.floor + 1; f < elevator_state.N_FLOORS; f++ {
-		for btn := 0; btn < elevator_state.N_BUTTONS; btn++ {
+	for f := e.floor + 1; f < c.N_FLOORS; f++ {
+		for btn := 0; btn < c.N_BUTTONS; btn++ {
 			if e.orders[f][btn] {
 				return true
 			}
@@ -36,56 +37,56 @@ func orders_here(e ElevatorState) bool {
 	return false
 }
 
-func chooseElevDirection(e ElevatorState) c.DirectionBehaviourPair {
+func chooseElevDirection(e ElevatorState) (driver.MotorDirection, c.Behaviour) {
 	switch e.direction {
-	case D_Up:
+	case driver.MD_Up:
 		if orders_above(e) {
-			return DirnBehaviourPair{D_Up, EB_Moving}
+			return driver.MD_Up, c.Moving
 		} else if orders_here(e) {
-			return DirnBehaviourPair{D_Down, EB_DoorOpen}
+			return driver.MD_Stop, c.DoorOpen
 		} else if orders_below(e) {
-			return DirnBehaviourPair{D_Down, EB_Moving}
+			return driver.MD_Down, c.Moving
 		} else {
-			return DirnBehaviourPair{D_Stop, EB_Idle}
+			return driver.MD_Stop, c.Idle
 		}
-	case D_Down:
+	case driver.MD_Down:
 		if orders_below(e) {
-			return DirnBehaviourPair{D_Down, EB_Moving}
+			return driver.MD_Down, c.Moving
 		} else if orders_here(e) {
-			return DirnBehaviourPair{D_Up, EB_DoorOpen}
+			return driver.MD_Up, c.DoorOpen
 		} else if orders_above(e) {
-			return DirnBehaviourPair{D_Up, EB_Moving}
+			return driver.MD_Up, c.Moving
 		} else {
-			return DirnBehaviourPair{D_Stop, EB_Idle}
+			return driver.MD_Stop, c.Idle
 		}
-	case D_Stop:
+	case driver.MD_Stop:
 		if orders_here(e) {
-			return DirnBehaviourPair{D_Stop, EB_DoorOpen}
+			return driver.MD_Stop, c.DoorOpen
 		} else if orders_above(e) {
-			return DirnBehaviourPair{D_Up, EB_Moving}
+			return driver.MD_Up, c.Moving
 		} else if orders_below(e) {
-			return DirnBehaviourPair{D_Down, EB_Moving}
+			return driver.MD_Down, c.Moving
 		} else {
-			return DirnBehaviourPair{D_Stop, EB_Idle}
+			return driver.MD_Stop, c.Idle
 		}
 	default:
-		return DirnBehaviourPair{D_Stop, EB_Idle}
+		return driver.MD_Stop, c.Idle
 	}
 }
 
 func shouldStop(e ElevatorState) bool {
-	switch e.dirn {
-	case e.D_Down:
+	switch e.direction {
+	case driver.MD_Down:
 		return bool(
-			e.orders[e.floor][B_HallDown] ||
-				e.orders[e.floor][B_Cab] ||
+			e.orders[e.floor][c.HallDown] ||
+				e.orders[e.floor][c.Cab] ||
 				!orders_below(e))
-	case D_Up:
+	case driver.MD_Up:
 		return bool(
-			e.orders[e.floor][B_HallUp] ||
-				e.orders[e.floor][B_Cab] ||
+			e.orders[e.floor][c.HallUp] ||
+				e.orders[e.floor][c.Cab] ||
 				!orders_above(e))
-	case D_Stop:
+	case driver.MD_Stop:
 		fallthrough
 	default:
 		return true
@@ -94,11 +95,37 @@ func shouldStop(e ElevatorState) bool {
 
 func shouldClearImmediatly(e ElevatorState, floor int, btn_type c.ButtonType) bool {
 	//TODO: IMPLEMENT
-	return false
+	// if elevator.floor == requested floor
+	return e.floor == floor &&
+		(e.direction == driver.MD_Up && btn_type == c.HallUp) ||
+		(e.direction == driver.MD_Down && btn_type == c.HallDown) ||
+		(e.direction == driver.MD_Stop || btn_type == c.Cab)
 }
 
-func clearAtCurrentFloor(e ElevatorState, floor int) {
+func clearAtCurrentFloor(e ElevatorState) {
 	//TODO: IMPLEMENT
+	e.orders[e.floor][c.Cab] = false
+	switch e.direction {
+	case driver.MD_Up:
+		if !orders_above(e) && !e.orders[e.floor][c.HallUp] {
+			e.orders[e.floor][c.HallDown] = false
+		}
+		e.orders[e.floor][c.HallUp] = false
+		break
+
+	case driver.MD_Down:
+		if !orders_below(e) && !e.orders[e.floor][c.HallDown] {
+			e.orders[e.floor][c.HallUp] = false
+		}
+		e.orders[e.floor][c.HallDown] = false
+		break
+
+	case driver.MD_Stop:
+	default:
+		e.orders[e.floor][c.HallUp] = false
+		e.orders[e.floor][c.HallDown] = false
+		break
+	}
 }
 
 /*func orders_shouldClearImmediately(e Elevator, btn_floor int, btn_type Button) int {
