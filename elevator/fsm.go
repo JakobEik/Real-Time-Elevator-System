@@ -43,36 +43,24 @@ func Fsm(
 	for {
 		select {
 		case order := <-ch_doOrder:
-			onNewOrderEvent(order)
+			onNewOrderEvent(order, elev)
 		case order := <-ch_newCabCall:
-			onNewOrderEvent(order)
+			onNewOrderEvent(order, elev)
 		case floor := <-ch_floorArrival:
 			onFloorArrivalEvent(floor, elev)
 		case stop := <-ch_stop:
-			onStopEvent(stop)
+			onStopEvent(stop, elev)
 		case obstruction := <-ch_obstruction:
-			onObstructionEvent(obstruction)
+			onObstructionEvent(obstruction, elev)
 		}
 
 	}
 
 }
 
-func onNewOrderEvent(order config.Order) {
+func onNewOrderEvent(order config.Order, elev ElevatorState) {
 	//TODO: IMPLEMENT
-	switch {
-	case elev.Behaviour == ele:
-		if elev.Floor == order.Floor {
-			// Reset doortimer
-		} else {
-			// Set order at this point to "true"
-		}
-	case elev.Behaviour == Idle:
-		// blablabla
 
-	case elev.Behaviour == DoorOpen:
-
-	}
 }
 
 func onFloorArrivalEvent(floor int, elev ElevatorState) {
@@ -92,10 +80,14 @@ func onFloorArrivalEvent(floor int, elev ElevatorState) {
 	}
 }
 
-func onStopEvent(stop bool) {
+func onStopEvent(stop bool, elev ElevatorState) {
 	//TODO: IMPLEMENT
 }
 
-func onObstructionEvent(obstruction bool) {
+func onObstructionEvent(obstruction bool, elev ElevatorState) {
+	//TODO: IMPLEMENT
+}
+
+func onDoorTimeout() {
 	//TODO: IMPLEMENT
 }

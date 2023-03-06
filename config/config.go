@@ -1,16 +1,15 @@
 package config
 
+import "Project/driver"
+
 const N_FLOORS = 4
 const N_BUTTONS = 3
 const DoorOpenDuration = 3
 
-type Direction int
-
-const (
-	Up   Direction = 1
-	Down Direction = -1
-	Stop Direction = 0
-)
+type DirectionBehaviourPair struct {
+	direction driver.MotorDirection
+	behaviour Behaviour
+}
 
 type RequestState int
 
