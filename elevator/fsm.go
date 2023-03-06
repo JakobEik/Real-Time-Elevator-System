@@ -116,6 +116,19 @@ func onFloorArrivalEvent(floor int, elev ElevatorState) {
 
 func onStopEvent(stop bool, elev ElevatorState) {
 	//TODO: IMPLEMENT
+	// Clear all requests and go to lowest floor
+	if stop {
+		driver.SetMotorDirection(driver.MD_Down)
+		for {
+			floor := elev.floor
+			if floor != 0 {
+				driver.SetMotorDirection(driver.MD_Down)
+			} else {
+				driver.SetMotorDirection(driver.MD_Stop)
+				break
+			}
+		}
+	}
 }
 
 func onObstructionEvent(obstruction bool, elev ElevatorState) {
