@@ -2,30 +2,31 @@ package elevator
 
 import (
 	"Project/config"
+	"Project/driver"
 )
 
 type ElevatorState struct {
-	Floor    int
-	Dir      MotorDirection
-	Behave   config.Behaviour
-	Requests [][]bool
+	floor     int
+	direction driver.MotorDirection
+	behavior  config.Behaviour
+	orders    [][]bool
 }
 
 // Init elevator at floor 0 and in idle state:
 func InitElev() ElevatorState {
-	requests := make([][]bool, 0)
+	orders := make([][]bool, 0)
 	for floor := 0; floor < config.N_FLOORS; floor++ {
-		requests = append(requests, make([]bool, config.N_BUTTONS))
-		for button := range requests[floor] {
-			requests[floor][button] = false
+		orders = append(orders, make([]bool, config.N_BUTTONS))
+		for button := range orders[floor] {
+			orders[floor][button] = false
 		}
 	}
 
 	return ElevatorState{
-		Floor:    0,
-		Dir:      elevio.MD_Stop,
-		Requests: requests,
-		Behave:   Idle}
+		floor:     0,
+		direction: driver.MD_Stop,
+		orders:    orders,
+		behavior:  config.Idle}
 
 }
 
