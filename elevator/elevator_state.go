@@ -2,6 +2,7 @@ package elevator
 
 import (
 	"Project/config"
+	"Project/driver"
 )
 
 type ElevatorState struct {
@@ -23,7 +24,7 @@ func InitElev() ElevatorState {
 
 	return ElevatorState{
 		Floor:    0,
-		Dir:      elevio.MD_Stop,
+		Dir:      driver.MD_Stop,
 		Requests: requests,
 		Behave:   Idle}
 

@@ -2,6 +2,7 @@ package elevator
 
 import (
 	"Project/config"
+	"Project/driver"
 )
 
 /*const (
@@ -45,21 +46,10 @@ type DirnBehaviourPair struct {
 }
 */
 
-func requests_above(e elevator_state.Elevator) bool {
-	for f := e.floor + 1; f < elevator_state.N_FLOORS; f++ {
-		for btn := 0; btn < elevator_state.N_BUTTONS; btn++ {
-			if e.requests[f][btn] {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func requests_below(e elevator_state.Elevator) bool {
-	for f := 0; f < e.floor; f++ {
+func requests_above(elev ElevatorState) bool {
+	for f := elev.Floor + 1; f < config.N_FLOORS; f++ {
 		for btn := 0; btn < config.N_BUTTONS; btn++ {
-			if e.requests[f][btn] {
+			if elev.Requests[f][btn] {
 				return true
 			}
 		}
@@ -67,9 +57,20 @@ func requests_below(e elevator_state.Elevator) bool {
 	return false
 }
 
-func requests_here(e elevator_state.Elevator) bool {
+func requests_below(elev ElevatorState) bool {
+	for f := 0; f < elev.Floor; f++ {
+		for btn := 0; btn < config.N_BUTTONS; btn++ {
+			if elev.Requests[f][btn] {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func requests_here(elev ElevatorState) bool {
 	for btn := 0; btn < config.N_BUTTONS; btn++ {
-		if e.requests[e.floor][btn] {
+		if elev.Requests[elev.Floor][btn] {
 			return true
 		}
 	}
@@ -113,19 +114,19 @@ func requests_chooseDirection(e elevator_state.Elevator) DirnBehaviourPair {
 	}
 }
 
-func requests_shouldStop(e elevator_state.Elevator) bool {
-	switch e.dirn {
-	case e.D_Down:
+func requests_shouldStop(elev ElevatorState) bool {
+	switch elev.Dir {
+	case elev.Dir == driver.MD_Down:
 		return bool(
-			e.requests[e.floor][B_HallDown] ||
-				e.requests[e.floor][B_Cab] ||
-				!requests_below(e))
-	case D_Up:
+			elev.Requests[elev.Floor][config.HallDown] ||
+				elev.Requests[elev.Floor][config.Cab] ||
+				!requests_below(elev))
+	case elev.Dir == driver.MD_Up:
 		return bool(
-			e.requests[e.floor][B_HallUp] ||
-				e.requests[e.floor][B_Cab] ||
-				!requests_above(e))
-	case D_Stop:
+			elev.Requests[elev.Floor][config.HallUp] ||
+				elev.Requests[elev.Floor][config.Cab] ||
+				!requests_above(elev))
+	case driver.MD_Stop:
 		fallthrough
 	default:
 		return true

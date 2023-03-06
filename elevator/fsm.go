@@ -3,6 +3,8 @@ package elevator
 import (
 	"Project/config"
 	"Project/driver"
+	"Project/timer"
+	"time"
 )
 
 /* Put in config!
@@ -10,7 +12,6 @@ var (
 	elev         Elevator
 	doorOpenTime = 3
 )
-
 const (
 	btnPress Events = iota
 	onFloorArrival
@@ -29,7 +30,6 @@ func Fsm(
 	driver.SetDoorOpenLamp(false)
 	driver.SetMotorDirection(driver.MD_Down)
 
-	// Initialize elevator
 	for {
 		floor := <-ch_floorArrival
 		if floor != 0 {
@@ -42,34 +42,18 @@ func Fsm(
 
 	for {
 		select {
-		case order := <-ch_orderChan:
-			// Function newOrder
-			doOrder()
-
-
-
-
-
-
-			// switch {
-			// case elev.Behaviour == elev.Behave:
-			// 	if elev.Floor == order.Floor {
-			// 		// Reset doortimer
-			// 	} else {
-			// 		// Set order at this point to "true"
-			// 	}
-			// case elev.Behaviour == Idle:
-			// 	// blablabla
-
-			// case elev.Behaviour == DoorOpen:
-
-			// }
-
-
-
+		case order := <-ch_doOrder:
+			onNewOrderEvent(order)
+		case order := <-ch_newCabCall:
+			onNewOrderEvent(order)
 		case floor := <-ch_floorArrival:
-			onFloorArrival(floor, elev)
+			onFloorArrivalEvent(floor, elev)
+		case stop := <-ch_stop:
+			onStopEvent(stop)
+		case obstruction := <-ch_obstruction:
+			onObstructionEvent(obstruction)
 		}
+
 	}
 
 }
@@ -91,12 +75,20 @@ func onNewOrderEvent(order config.Order) {
 	}
 }
 
-func onFloorArrivalEvent(floor int) {
-	//TODO: IMPLEMENT
-	elev.Floor = floor
-	switch {
-	case elev.Behaviour == Moving:
-
+func onFloorArrivalEvent(floor int, elev ElevatorState) {
+	if requests_shouldStop(elev) {
+		driver.SetMotorDirection(driver.MD_Stop)
+		driver.SetDoorOpenLamp(true)
+		// Reset doortimer
+		time.Sleep(3 * time.Second)
+		driver.SetDoorOpenLamp(false)
+		
+	} else { // Should continue
+		if elev.Floor < floor {
+			driver.SetMotorDirection(driver.MD_Up)
+		} else {
+			driver.SetMotorDirection(driver.MD_Down)
+		}
 	}
 }
 
