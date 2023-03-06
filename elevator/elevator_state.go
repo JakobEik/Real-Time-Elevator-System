@@ -1,19 +1,18 @@
 package elevator
 
 import (
-	"project-group-77/config"
+	"Project/config"
 )
 
-type Elevator struct {
-	Floor     int
-	Dir       MotorDirection
-	Behave    config.Behaviour
-	Requests  [][]bool
-	DoorTimer Timer
+type ElevatorState struct {
+	Floor    int
+	Dir      MotorDirection
+	Behave   config.Behaviour
+	Requests [][]bool
 }
 
 // Init elevator at floor 0 and in idle state:
-func InitElev() Elevator {
+func InitElev() ElevatorState {
 	requests := make([][]bool, 0)
 	for floor := 0; floor < config.N_FLOORS; floor++ {
 		requests = append(requests, make([]bool, config.N_BUTTONS))
@@ -22,7 +21,7 @@ func InitElev() Elevator {
 		}
 	}
 
-	return Elevator{
+	return ElevatorState{
 		Floor:    0,
 		Dir:      elevio.MD_Stop,
 		Requests: requests,

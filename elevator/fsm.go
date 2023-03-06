@@ -2,6 +2,7 @@ package elevator
 
 import (
 	"Project/config"
+	"Project/driver"
 	"fmt"
 )
 
@@ -18,25 +19,24 @@ const (
 )*/
 
 func Fsm(
-	ch_orderChan chan ButtonEvent,
-	ch_doRequest chan bool,
-	ch_floorArrival chan int,
-	ch_newRequest chan bool,
-	ch_Obstruction chan bool,
-	channel_DoorTimer chan bool) {
+	ch_doOrder <-chan config.Order,
+	ch_newCabCall <-chan config.Order,
+	ch_floorArrival <-chan int,
+	ch_Obstruction <-chan bool,
+	ch_stop <-chan bool) {
 
 	elev := InitElev()
 
-	SetDoorOpenLamp(false)
-	SetMotorDirection(MD_Down)
+	driver.SetDoorOpenLamp(false)
+	driver.SetMotorDirection(driver.MD_Down)
 
 	// Initialize elevator
 	for {
 		floor := <-ch_floorArrival
 		if floor != 0 {
-			SetMotorDirection(MD_Down)
+			driver.SetMotorDirection(driver.MD_Down)
 		} else {
-			SetMotorDirection(MD_Stop)
+			driver.SetMotorDirection(driver.MD_Stop)
 			break
 		}
 	}
@@ -45,6 +45,7 @@ func Fsm(
 		select {
 		case order := <-ch_orderChan:
 			// Function newOrder
+			doOrder()
 
 
 
@@ -74,26 +75,27 @@ func Fsm(
 
 }
 
-func onFloorArrival(floor int, elev Elevator){
+func onFloorArrival(floor int, state ElevatorState){
 	switch {
-	case elev.Behave == config.Moving:
+	case state.Behave == config.Moving:
 		if requests_shouldStop(floor) {
-			SetMotorDirection(MD_Stop)
-			SetDoorOpenLamp(true)
+			driver.SetMotorDirection(driver.MD_Stop)
+			driver.SetDoorOpenLamp(true)
 
-			elev.Behave = config.DoorOpen
+			state.Behave = config.DoorOpen
 		} else {
 			// continue moving
-			elev.Floor = floor
+			state.Floor = floor
 		}
 	default:
-		// print error
+		// print erro
 		fmt.Print("Error: onFloorArrival() called when behaviour is not Moving")
 	}
 }
 
-func newOrder(){
-	// Check if order is at current floor
-	// If not, set order to true
-	// If yes, set door open
+func doOrder(){
+	// Check if order is valid
+	// Check if order is already in queue
+	// If not, add order to queue
+	// If yes, do nothing
 }

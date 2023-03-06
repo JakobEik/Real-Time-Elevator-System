@@ -1,8 +1,7 @@
 package elevator
 
 import (
-	"project-group-77/config"
-	elevator_state "project-group-77/elevator"
+	"Project/config"
 )
 
 /*const (
