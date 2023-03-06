@@ -16,7 +16,7 @@ type RequestState int
 
 const (
 	None      RequestState = 0
-	Order     RequestState = 1
+	NewOrder  RequestState = 1
 	Confirmed RequestState = 2
 	Complete  RequestState = 3
 )
@@ -38,7 +38,7 @@ const (
 	Cab      ButtonType = 2
 )
 
-type Request struct {
+type Order struct {
 	Floor  int
 	Button ButtonType
 }
@@ -47,5 +47,5 @@ type CostRequest struct {
 	Id         string
 	Cost       int
 	AssignedID string
-	Req        Request
+	Req        Order
 }
