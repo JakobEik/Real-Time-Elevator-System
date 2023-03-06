@@ -1,7 +1,7 @@
 package main
 
 import (
-	finiteStateMachine "project-group-77/elevator"
+	"Project/elevator"
 )
 
 func main() {
@@ -15,11 +15,11 @@ func main() {
 	ch_Obstruction := make(chan bool)
 	channel_DoorTimer := make(chan bool)
 
-	go finiteStateMachine.PollButtons(drv_buttons)
-	go finiteStateMachine.PollFloorSensor(drv_floors)
-	go finiteStateMachine.PollObstructionSwitch(drv_obstr)
-	go finiteStateMachine.PollStopButton(drv_stop)
-	elevator_state.Fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
+	go elevator.PollButtons(drv_buttons)
+	go elevator.PollFloorSensor(drv_floors)
+	go elevator.PollObstructionSwitch(drv_obstr)
+	go elevator.PollStopButton(drv_stop)
+	elevator.Fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 	//request_executor.fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 }
 
