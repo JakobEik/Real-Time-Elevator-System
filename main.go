@@ -1,7 +1,6 @@
 package main
 
 import (
-	"Project/config"
 	"Project/driver"
 	"Project/elevator"
 )
@@ -22,7 +21,7 @@ func main() {
 	//ch_newOrder := make(chan config.Order)
 
 	// channels for FSM
-	ch_newCabCall := make(chan config.Order, 100)
+	ch_newCabCall := make(chan driver.ButtonEvent, 100)
 	ch_floorArrival := make(chan int,100)
 	ch_obstruction := make(chan bool, 100)
 	ch_stop := make(chan bool)

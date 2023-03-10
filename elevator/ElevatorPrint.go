@@ -21,7 +21,7 @@ func elevPrint(e ElevatorState) {
 	for f := 3; f >= 0; f-- {
 		fmt.Printf("  | %d", f)
 		for btn := 0; btn < 3; btn++ {
-			if (f == 3 && btn == int(driver.BT_HallUp)) || (f == 0 && btn == int(config.HallDown)) {
+			if (f == 3 && btn == int(driver.BT_HallUp)) || (f == 0 && btn == int(driver.BT_HallDown)) {
 				fmt.Print("|     ")
 			} else {
 				if e.orders[f][btn] {
