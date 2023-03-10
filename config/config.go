@@ -1,5 +1,7 @@
 package config
 
+import "Project/driver"
+
 const N_FLOORS = 4
 const N_BUTTONS = 3
 const DoorOpenDuration = 3
@@ -22,7 +24,7 @@ const (
 	Unavailable Behavior = 3
 )
 
-type ButtonType int
+/*type ButtonType int
 
 const (
 	HallUp   ButtonType = 0
@@ -33,11 +35,11 @@ const (
 type Order struct {
 	Floor  int
 	Button ButtonType
-}
+}*/
 
-type CostRequest struct {
+type CostOrder struct {
 	Id         string
 	Cost       int
 	AssignedID string
-	Req        Order
+	Order 	   driver.ButtonEvent      
 }
