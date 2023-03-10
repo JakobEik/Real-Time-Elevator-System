@@ -71,7 +71,8 @@ func Fsm(
 			Stop = true
 			onStopEvent(stop, &elev, ch_floorArrival)
 		case obstruction := <-ch_obstruction:
-			onObstructionEvent(obstruction, elev)
+			println(obstruction)
+			//onObstructionEvent(obstruction, elev)
 		}
 
 	}
@@ -143,14 +144,12 @@ func onStopEvent(stop bool, e *ElevatorState, a <-chan int) {
 
 func onObstructionEvent(obstruction bool, e *ElevatorState) {
 	//TODO: IMPLEMENT
-	//for obstruction{
-		//if e.behavior != c.DoorOpen {
-			//drv.SetMotorDirection(drv.MD_Stop)
-			//e.behavior = c.Idle
+	/*for obstruction{
+		if e.behavior != c.DoorOpen {
+			drv.SetMotorDirection(drv.MD_Stop)
+			e.behavior = c.Idle
 		}
-	//}
-	
-
+	}*/
 
 }
 
