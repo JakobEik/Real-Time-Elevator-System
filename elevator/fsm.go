@@ -12,7 +12,9 @@ func Fsm(
 	ch_newCabCall <-chan drv.ButtonEvent,
 	ch_floorArrival <-chan int,
 	ch_obstruction <-chan bool,
-	ch_stop <-chan bool) {
+	ch_stop <-chan bool,
+	ch_requestLocalState <-chan bool,
+	ch_currentLocalState chan<- ElevatorState) {
 
 	Stop := false
 
@@ -35,6 +37,8 @@ func Fsm(
 
 	for {
 		select {
+		case <-ch_requestLocalState:
+			ch_currentLocalState <- elev
 		case order := <-ch_doOrder:
 			println("NEW BUTTONPRESS!")
 			onNewOrderEvent(order, e_ptr)
@@ -83,7 +87,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState) {
 		if shouldClearImmediatly(e, floor, btn_type) {
 			time.Sleep(time.Second * c.DoorOpenDuration)
 			e.orders[floor][btn_type] = false
-		} 
+		}
 	case c.Idle:
 		drv.SetButtonLamp(btn_type, floor, true)
 		direction, behavior := chooseElevDirection(e)
@@ -141,7 +145,7 @@ func onObstructionEvent(obstruction bool, e ElevatorState) {
 	//TODO: IMPLEMENT
 }
 
-func nextOrder(e ElevatorState){
+func nextOrder(e ElevatorState) {
 	direction, behavior := chooseElevDirection(&e)
 	e.direction = direction
 	e.behavior = behavior
@@ -150,7 +154,7 @@ func nextOrder(e ElevatorState){
 	}
 }
 
-func printState(elev ElevatorState){
+func printState(elev ElevatorState) {
 	println("   UP  DOWN  CAB")
 	fmt.Println(elev.orders[3])
 	fmt.Println(elev.orders[2])

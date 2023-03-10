@@ -1,41 +1,43 @@
 package main
 
 import (
+	"Project/config"
 	"Project/driver"
 	"Project/elevator"
 )
 
 func main() {
 	// channels for order assigner
-	//ch_requestLocalState := make(chan elevator.ElevatorState)
-	//ch_currentLocalState := make(chan elevator.ElevatorState)
+	ch_requestLocalState := make(chan bool)
+	ch_currentLocalState := make(chan elevator.ElevatorState)
 
 	// channels for Network
 	//ch_peerUpdate := make(chan bruh)
-	//ch_stateToNetwork := make(chan globalState)
-	//ch_stateFromNetwork := make(chan globalState)
+	//ch_peerTxEnable := make(chan bruh)
+	//ch_Tx := make(chan globalState)
+	//ch_Rx := make(chan globalState)
 
 	// channels for order distributor
 	//ch_localStateUpdated := make(chan config.Order)
-	//ch_doOrder := make(chan config.Order)
+
 	//ch_newOrder := make(chan config.Order)
 
 	// channels for FSM
-	ch_newCabCall := make(chan driver.ButtonEvent, 100)
-	ch_floorArrival := make(chan int,100)
+	ch_doOrder := make(chan driver.ButtonEvent, 100)
+	ch_floorArrival := make(chan int, 100)
 	ch_obstruction := make(chan bool, 100)
 	ch_stop := make(chan bool)
 
 	// channels for Elevio Driver
-	ch_buttons := make(chan driver.ButtonEvent,100)
+	ch_buttons := make(chan driver.ButtonEvent, 100)
 
 	//channel_DoorTimer := make(chan bool)
-	driver.Init("localhost:15657", 4)
+	driver.Init("localhost:15657", config.N_FLOORS)
 	go driver.PollButtons(ch_buttons)
 	go driver.PollFloorSensor(ch_floorArrival)
 	go driver.PollObstructionSwitch(ch_obstruction)
 	go driver.PollStopButton(ch_stop)
-	elevator.Fsm(ch_buttons, ch_newCabCall, ch_floorArrival, ch_obstruction, ch_stop)
+	elevator.Fsm(ch_buttons, ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_requestLocalState, ch_currentLocalState)
 	//request_executor.fsm(ch_doRequest, ch_floorArrival, ch_newRequest, ch_Obstruction, channel_DoorTimer)
 }
 
