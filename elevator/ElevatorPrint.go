@@ -12,9 +12,9 @@ func elevPrint(e ElevatorState) {
 		"  |floor = %-2d          |\n"+
 			"  |dirn  = %-12.12s|\n"+
 			"  |behav = %-12.12s|\n",
-		e.floor,
-		dirnToString(e.direction),
-		ebToString(e.behavior),
+		e.Floor,
+		dirnToString(e.Direction),
+		ebToString(e.Behavior),
 	)
 	fmt.Println("  +--------------------+")
 	fmt.Println("  |  | up  | dn  | cab |")
@@ -24,7 +24,7 @@ func elevPrint(e ElevatorState) {
 			if (f == 3 && btn == int(driver.BT_HallUp)) || (f == 0 && btn == int(driver.BT_HallDown)) {
 				fmt.Print("|     ")
 			} else {
-				if e.orders[f][btn] {
+				if e.Orders[f][btn] {
 					fmt.Print("|  #  ")
 				} else {
 					fmt.Print("|  -  ")
