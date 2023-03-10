@@ -137,8 +137,17 @@ func onStopEvent(stop bool, e *ElevatorState, a <-chan int) {
 	}
 }
 
-func onObstructionEvent(obstruction bool, e ElevatorState) {
+func onObstructionEvent(obstruction bool, e *ElevatorState) {
 	//TODO: IMPLEMENT
+	//for obstruction{
+		//if e.behavior != c.DoorOpen {
+			//drv.SetMotorDirection(drv.MD_Stop)
+			//e.behavior = c.Idle
+		}
+	//}
+	
+
+
 }
 
 func nextOrder(e ElevatorState){
