@@ -6,10 +6,10 @@ import (
 )
 
 type ElevatorState struct {
-	floor     int
-	direction driver.MotorDirection
-	behavior  config.Behavior
-	orders    [][]bool
+	Floor     int
+	Direction driver.MotorDirection
+	Behavior  config.Behavior
+	Orders    [][]bool
 }
 
 // Init elevator at floor 0 and in idle state:
@@ -23,9 +23,9 @@ func InitElev() ElevatorState {
 	}
 
 	return ElevatorState{
-		floor:     0,
-		direction: driver.MD_Stop,
-		orders:    orders,
-		behavior:  config.Idle}
+		Floor:     0,
+		Direction: driver.MD_Stop,
+		Orders:    orders,
+		Behavior:  config.Idle}
 
 }
