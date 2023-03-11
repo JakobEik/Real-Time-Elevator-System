@@ -12,9 +12,7 @@ func Fsm(
 	ch_newCabCall <-chan drv.ButtonEvent,
 	ch_floorArrival <-chan int,
 	ch_obstruction <-chan bool,
-	ch_stop <-chan bool,
-	ch_requestLocalState <-chan bool,
-	ch_currentLocalState chan<- ElevatorState) {
+	ch_stop <-chan bool) {
 
 	Stop := false
 
@@ -37,8 +35,6 @@ func Fsm(
 
 	for {
 		select {
-		case <-ch_requestLocalState:
-			ch_currentLocalState <- elev
 		case order := <-ch_doOrder:
 			println("NEW BUTTONPRESS!")
 			onNewOrderEvent(order, e_ptr)
@@ -72,6 +68,7 @@ func Fsm(
 			onStopEvent(stop, &elev, ch_floorArrival)
 		case obstruction := <-ch_obstruction:
 			onObstructionEvent(obstruction, &elev)
+
 		}
 
 	}
@@ -144,16 +141,6 @@ func onStopEvent(stop bool, e *ElevatorState, a <-chan int) {
 
 func onObstructionEvent(obstruction bool, e *ElevatorState) {
 	//TODO: IMPLEMENT
-	for obstruction {
-		if e.Behavior != c.DoorOpen {
-			drv.SetMotorDirection(drv.MD_Stop)
-			e.Behavior = c.Idle
-		} else {
-
-		}
-
-	}
-
 }
 
 func nextOrder(e ElevatorState) {
