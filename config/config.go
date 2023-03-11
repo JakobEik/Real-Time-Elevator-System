@@ -1,7 +1,5 @@
 package config
 
-import "Project/elevator"
-
 const N_FLOORS = 4
 const N_BUTTONS = 3
 const N_ELEVATORS = 3
@@ -16,9 +14,10 @@ const (
 	Unavailable          = 3
 )
 
-type GlobalState struct {
-	ElevatorID int
-	states     []elevator.ElevatorState
+type NetworkMessage struct {
+	SenderID   int
+	ReceiverID int
+	Msg        any
 }
 
 /*type RequestState int
