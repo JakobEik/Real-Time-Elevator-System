@@ -3,25 +3,45 @@ package assigner
 import (
 	c "Project/config"
 	p "Project/network/peers"
-	drv "Project/driver"
+
+	//drv "Project/driver"
 )
 
-func master(ch_peerUpdate chan p.PeerUpdate, ch_peerTxEnable chan bool,
-	//Tx Channels
-	ch_TxGlobalState chan c.GlobalState, ch_TxNewOrder chan drv.ButtonEvent, ch_TxOrderDone chan drv.ButtonEvent,
-	ch_TxOrderAccepted chan drv.ButtonEvent, ch_TxRequestGlobalState chan bool, ch_TxDoOrder chan drv.ButtonEvent,
-	ch_TxChangeYourState chan TODO, ch_TxMsgReceived chan bool, 
-	//Rx Channels
-	
-	 ){
+func master(
+	ch_peerUpdate chan p.PeerUpdate, //maybe remove??
+	ch_peerTxEnable chan bool, //maybe remove??
+	ch_messageToNetwork <-chan c.NetworkMessage
+	ch_messageFromNetwork chan<- c.NetworkMessage) {
+
+		
+
+	for {
+		select {
+		case message := <- ch_messageFromNetwork:
+			switch message.MsgType{
+			case c.GlobalState:
+				
+			case c.NewOrder:
+			case OrderDone:
+			case OrderAccepted:
+			case RequestGlobalState:
+			case DoOrder:
+			case ChangeYourState:
+			case MsgReceived:
+
+			} 
+		
+
+		}
+
+	}
 
 }
 
-
-func calculateCost(){
-
-
+func calculateCost() {
 
 }
 
+func makeMessage(Receiver int, sender int, message any) c.NetworkMessage{
 
+}
