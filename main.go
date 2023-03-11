@@ -23,7 +23,7 @@ func main() {
 	ch_TxRequestGlobalState := make(chan config.NetworkMessage, config.N_ELEVATORS+1)
 	ch_TxDoOrder := make(chan config.NetworkMessage, bufferSize)
 	ch_TxChangeYourState := make(chan config.NetworkMessage)
-	ch_TxMsgReceived := make(chan bool)
+	ch_TxMsgReceived := make(chan config.NetworkMessage)
 
 	// Receiver channels
 	ch_RxGlobalState := make(chan config.NetworkMessage, bufferSize)
