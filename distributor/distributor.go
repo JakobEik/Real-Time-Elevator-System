@@ -39,8 +39,8 @@ func Distributor(
 }
 
 func initGlobalState() {
-	globalState = make([]elevator.ElevatorState, config.N_ELEVATORS)
+	globalState = make([]e.ElevatorState, config.N_ELEVATORS)
 	for i := 0; i < config.N_ELEVATORS-1; i++ {
-		globalState = append(globalState, elevator.InitElev())
+		globalState = append(globalState, e.InitElev())
 	}
 }

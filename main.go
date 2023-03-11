@@ -4,15 +4,15 @@ import (
 	"Project/config"
 	drv "Project/driver"
 	e "Project/elevator"
-	//"Project/network/bcast"
-	//"Project/network/peers"
+	"Project/network/bcast"
+	"Project/network/peers"
 )
 
 const bufferSize = config.N_ELEVATORS * 11
 
 func main() {
 	// channels for Network
-	/*ch_peerUpdate := make(chan peers.PeerUpdate)
+	ch_peerUpdate := make(chan peers.PeerUpdate)
 	ch_peerTxEnable := make(chan bool)
 	// Transmitter channels
 	ch_TxGlobalState := make(chan config.GlobalState, bufferSize)
@@ -20,7 +20,7 @@ func main() {
 	ch_TxOrderDone := make(chan drv.ButtonEvent, bufferSize)
 	ch_TxOrderAccepted := make(chan drv.ButtonEvent, bufferSize)
 	ch_TxRequestGlobalState := make(chan bool, config.N_ELEVATORS+1)
-	ch_TxDoOrder := make(drv.ButtonEvent, bufferSize)
+	ch_TxDoOrder := make(chan drv.ButtonEvent, bufferSize)
 	ch_TxChangeYourState := make(TODO)
 	ch_TxMsgReceived := make(chan bool)
 
@@ -30,9 +30,9 @@ func main() {
 	ch_RxOrderDone := make(chan drv.ButtonEvent, bufferSize)
 	ch_RxOrderAccepted := make(chan drv.ButtonEvent, bufferSize)
 	ch_RxRequestGlobalState := make(chan bool, config.N_ELEVATORS+1)
-	ch_RxDoOrder := make(drv.ButtonEvent, bufferSize)
+	ch_RxDoOrder := make(chan drv.ButtonEvent, bufferSize)
 	ch_RxChangeYourState := make(TODO)
-	ch_RxMsgReceived := make(chan bool)*/
+	ch_RxMsgReceived := make(chan bool)
 
 	// channels for distributor
 	//ch_localStateUpdated := make(chan e.ElevatorState)
