@@ -122,7 +122,7 @@ func onFloorArrivalEvent(stop bool, floor int, e *ElevatorState) {
 		drv.SetDoorOpenLamp(false)
 
 	} else {
-		
+
 	} // Should continue
 	// 	if e.floor < floor {
 	// 		drv.SetMotorDirection(drv.MD_Up)

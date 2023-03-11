@@ -7,7 +7,7 @@ import (
 	"math"
 )
 
-func Cost(state e.ElevatorState) int {
+func Cost(state e.ElevatorState) int {	// Maybe make more efficient algorithm, the one in resources file??
 	ord := state.Orders
 	currFloor := state.Floor
 	var ordFloor int
@@ -17,7 +17,7 @@ func Cost(state e.ElevatorState) int {
 	for i := 0; i < c.N_BUTTONS; i++ {
 		for j := 0; j < c.N_FLOORS; j++ {
 
-			if ord[i][j] == true {
+			if ord[i][j] {
 				ordFloor = i
 				ordBtn = j
 			}
