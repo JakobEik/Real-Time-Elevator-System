@@ -56,7 +56,7 @@ func chooseElevDirection(e *ElevatorState) (drv.MotorDirection, util.Behavior) {
 		} else if ordersAbove(e) {
 			return drv.MD_Up, util.Moving
 		} else {
-			return drv.MD_Stop, cutil.Idle
+			return drv.MD_Stop, util.Idle
 		}
 	case drv.MD_Stop:
 		if ordersHere(e) {
