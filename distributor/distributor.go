@@ -48,11 +48,3 @@ func localStateUpdatedEvent(
 	oldState = newState
 
 }
-
-func initGlobalState() []e.ElevatorState {
-	globalState := make([]e.ElevatorState, utilities.N_ELEVATORS)
-	for i := 0; i < utilities.N_ELEVATORS-1; i++ {
-		globalState = append(globalState, e.InitElev())
-	}
-	return globalState
-}
