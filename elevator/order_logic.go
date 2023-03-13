@@ -1,13 +1,13 @@
 package elevator
 
 import (
-	c "Project/config"
 	drv "Project/driver"
+	util "Project/utilities"
 )
 
 func ordersAbove(e *ElevatorState) bool {
-	for f := e.Floor + 1; f < c.N_FLOORS; f++ {
-		for btn := 0; btn < c.N_BUTTONS; btn++ {
+	for f := e.Floor + 1; f < util.N_FLOORS; f++ {
+		for btn := 0; btn < util.N_BUTTONS; btn++ {
 			if e.Orders[f][btn] {
 				return true
 			}
@@ -18,7 +18,7 @@ func ordersAbove(e *ElevatorState) bool {
 
 func ordersBelow(e *ElevatorState) bool {
 	for f := 0; f < e.Floor; f++ {
-		for btn := 0; btn < c.N_BUTTONS; btn++ {
+		for btn := 0; btn < util.N_BUTTONS; btn++ {
 			if e.Orders[f][btn] {
 				return true
 			}
@@ -28,7 +28,7 @@ func ordersBelow(e *ElevatorState) bool {
 }
 
 func ordersHere(e *ElevatorState) bool {
-	for btn := 0; btn < c.N_BUTTONS; btn++ {
+	for btn := 0; btn < util.N_BUTTONS; btn++ {
 		if e.Orders[e.Floor][btn] {
 			return true
 		}
@@ -36,40 +36,40 @@ func ordersHere(e *ElevatorState) bool {
 	return false
 }
 
-func chooseElevDirection(e *ElevatorState) (drv.MotorDirection, c.Behavior) {
+func chooseElevDirection(e *ElevatorState) (drv.MotorDirection, util.Behavior) {
 	switch e.Direction {
 	case drv.MD_Up:
 		if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, util.Moving
 		} else if ordersHere(e) {
-			return drv.MD_Stop, c.DoorOpen
+			return drv.MD_Stop, util.DoorOpen
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, util.Moving
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, util.Idle
 		}
 	case drv.MD_Down:
 		if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, util.Moving
 		} else if ordersHere(e) {
-			return drv.MD_Up, c.DoorOpen
+			return drv.MD_Up, util.DoorOpen
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, util.Moving
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, cutil.Idle
 		}
 	case drv.MD_Stop:
 		if ordersHere(e) {
-			return drv.MD_Stop, c.DoorOpen
+			return drv.MD_Stop, util.DoorOpen
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, util.Moving
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, util.Moving
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, util.Idle
 		}
 	default:
-		return drv.MD_Stop, c.Idle
+		return drv.MD_Stop, util.Idle
 	}
 }
 

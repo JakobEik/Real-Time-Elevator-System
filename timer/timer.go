@@ -1,13 +1,13 @@
 package timer
 
 import (
-	"Project/config"
+	"Project/utilities"
 	"time"
 )
 
 func DoorTimer(channel_DoorTimer chan<- bool) {
-	for obstruction{
-	time.Sleep(time.Second * config.DoorOpenDuration)
+	for obstruction {
+		time.Sleep(time.Second * utilities.DoorOpenDuration)
 	}
 	channel_DoorTimer <- true
 }

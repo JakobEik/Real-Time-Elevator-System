@@ -1,18 +1,18 @@
 package elevator
 
 import (
-	c "Project/config"
 	drv "Project/driver"
+	util "Project/utilities"
 	"fmt"
 	"time"
 )
 
 func Fsm(
 	ch_doOrder <-chan drv.ButtonEvent,
-	ch_newCabCall <-chan drv.ButtonEvent,
 	ch_floorArrival <-chan int,
 	ch_obstruction <-chan bool,
-	ch_stop <-chan bool) {
+	ch_stop <-chan bool,
+	ch_newLocalState chan<- ElevatorState) {
 
 	Stop := false
 
@@ -39,10 +39,7 @@ func Fsm(
 			println("NEW BUTTONPRESS!")
 			onNewOrderEvent(order, e_ptr)
 			printState(elev)
-		case order := <-ch_newCabCall:
-			println("NEW ORDER!")
-			onNewOrderEvent(order, e_ptr)
-			printState(elev)
+			ch_newLocalState <- elev
 		case floor := <-ch_floorArrival:
 			println("Floor arrival:", floor)
 			if Stop {
@@ -62,12 +59,15 @@ func Fsm(
 				nextOrder(elev)
 			}
 			printState(elev)
+			ch_newLocalState <- elev
 
 		case stop := <-ch_stop:
 			Stop = true
 			onStopEvent(stop, &elev, ch_floorArrival)
+			ch_newLocalState <- elev
 		case obstruction := <-ch_obstruction:
 			onObstructionEvent(obstruction, &elev)
+			ch_newLocalState <- elev
 
 		}
 
@@ -80,22 +80,22 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState) {
 	btn_type := order.Button
 	e.Orders[floor][btn_type] = true
 	switch e.Behavior {
-	case c.DoorOpen:
+	case util.DoorOpen:
 		if shouldClearImmediatly(e, floor, btn_type) {
-			time.Sleep(time.Second * c.DoorOpenDuration)
+			time.Sleep(time.Second * util.DoorOpenDuration)
 			e.Orders[floor][btn_type] = false
 		}
-	case c.Idle:
+	case util.Idle:
 		drv.SetButtonLamp(btn_type, floor, true)
 		direction, behavior := chooseElevDirection(e)
 		e.Direction = direction
 		e.Behavior = behavior
 		switch e.Behavior {
-		case c.DoorOpen:
+		case util.DoorOpen:
 			drv.SetDoorOpenLamp(true)
-			time.Sleep(time.Second * c.DoorOpenDuration)
+			time.Sleep(time.Second * util.DoorOpenDuration)
 			clearAtCurrentFloor(e)
-		case c.Moving:
+		case util.Moving:
 			drv.SetMotorDirection(e.Direction)
 		}
 	}
@@ -111,23 +111,14 @@ func onFloorArrivalEvent(stop bool, floor int, e *ElevatorState) {
 	if shouldStop(e) {
 		//println("Elevator should stop?", shouldStop(e))
 		drv.SetMotorDirection(drv.MD_Stop)
-		e.Behavior = c.Idle
+		e.Behavior = util.Idle
 		clearAtCurrentFloor(e)
 		drv.SetDoorOpenLamp(true)
 		// Reset doortimer
 		time.Sleep(3 * time.Second)
 		drv.SetDoorOpenLamp(false)
 
-	} else {
-
-	} // Should continue
-	// 	if e.floor < floor {
-	// 		drv.SetMotorDirection(drv.MD_Up)
-	// 	} else {
-	// 		drv.SetMotorDirection(drv.MD_Down)
-	// 	}
-	// }
-	//TODO: IMPLEMENT
+	}
 
 }
 
