@@ -4,6 +4,8 @@ import (
 	"Project/config"
 	"Project/driver"
 	e "Project/elevator"
+	"Project/network/peers"
+
 	//"Project/network/peers"
 )
 
@@ -15,10 +17,10 @@ func Distributor(
 	ch_doOrder chan<- driver.ButtonEvent,
 	ch_localStateUpdated <-chan e.ElevatorState,
 	ch_newLocalOrder <-chan driver.ButtonEvent,
-	/*ch_peerUpdate chan peers.PeerUpdate,
-	  ch_peerTxEnable chan bool,
-	  ch_Tx chan []e.ElevatorState,
-	  ch_Rx chan []e.ElevatorState*/) {
+	ch_peerUpdate chan peers.PeerUpdate,
+	ch_peerTxEnable chan bool,
+	ch_messageToNetwork chan<- config.NetworkMessage,
+	ch_messageFromNetwork <-chan config.NetworkMessage) {
 
 	// Ask network if they have a global state: true => globalState = this state, else
 	if false {
@@ -32,7 +34,7 @@ func Distributor(
 			//TODO: FIX NETWORKING STUFF
 			ch_doOrder <- newLocalOrder
 		case newLocalState := <-ch_localStateUpdated:
-
+			globalState[elevatorID] = newLocalState
 		}
 
 	}

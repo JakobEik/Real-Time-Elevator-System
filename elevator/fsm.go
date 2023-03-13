@@ -9,10 +9,10 @@ import (
 
 func Fsm(
 	ch_doOrder <-chan drv.ButtonEvent,
-	ch_newCabCall <-chan drv.ButtonEvent,
 	ch_floorArrival <-chan int,
 	ch_obstruction <-chan bool,
-	ch_stop <-chan bool) {
+	ch_stop <-chan bool,
+	ch_newLocalState chan<- ElevatorState) {
 
 	Stop := false
 
@@ -39,10 +39,7 @@ func Fsm(
 			println("NEW BUTTONPRESS!")
 			onNewOrderEvent(order, e_ptr)
 			printState(elev)
-		case order := <-ch_newCabCall:
-			println("NEW ORDER!")
-			onNewOrderEvent(order, e_ptr)
-			printState(elev)
+			ch_newLocalState <- elev
 		case floor := <-ch_floorArrival:
 			println("Floor arrival:", floor)
 			if Stop {
@@ -62,12 +59,15 @@ func Fsm(
 				nextOrder(elev)
 			}
 			printState(elev)
+			ch_newLocalState <- elev
 
 		case stop := <-ch_stop:
 			Stop = true
 			onStopEvent(stop, &elev, ch_floorArrival)
+			ch_newLocalState <- elev
 		case obstruction := <-ch_obstruction:
 			onObstructionEvent(obstruction, &elev)
+			ch_newLocalState <- elev
 
 		}
 
@@ -118,16 +118,7 @@ func onFloorArrivalEvent(stop bool, floor int, e *ElevatorState) {
 		time.Sleep(3 * time.Second)
 		drv.SetDoorOpenLamp(false)
 
-	} else {
-
-	} // Should continue
-	// 	if e.floor < floor {
-	// 		drv.SetMotorDirection(drv.MD_Up)
-	// 	} else {
-	// 		drv.SetMotorDirection(drv.MD_Down)
-	// 	}
-	// }
-	//TODO: IMPLEMENT
+	}
 
 }
 

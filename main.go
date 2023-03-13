@@ -11,7 +11,6 @@ import (
 
 const bufferSize = config.N_ELEVATORS * 11
 
-
 func main() {
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
@@ -45,6 +44,14 @@ func main() {
 	go bcast.Transmitter(15600, ch_messageToNetwork)
 	go bcast.Receiver(15600, ch_messageFromNetwork)
 
-	go d.Distributor(ch_doOrder, ch_localStateUpdated, ch_newLocalOrder, ch_peerUpdate, ch_peerTxEnable)
-	e.Fsm(ch_buttons, ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop)
+	go d.Distributor(
+		ch_doOrder,
+		ch_localStateUpdated,
+		ch_newLocalOrder,
+		ch_peerUpdate,
+		ch_peerTxEnable,
+		ch_messageFromNetwork,
+		ch_messageFromNetwork)
+
+	e.Fsm(ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated)
 }
