@@ -1,7 +1,7 @@
 package assigner
 
 import (
-	c "Project/config"
+	util "Project/utilities"
 	p "Project/network/peers"
 
 	//drv "Project/driver"
@@ -10,7 +10,7 @@ import (
 func master(
 	ch_peerUpdate chan p.PeerUpdate, //maybe remove??
 	ch_peerTxEnable chan bool, //maybe remove??
-	ch_messageToNetwork <-chan c.NetworkMessage
+	ch_messageToNetwork <-chan util.NetworkMessage
 	ch_messageFromNetwork chan<- c.NetworkMessage) {
 
 		
@@ -42,6 +42,6 @@ func calculateCost() {
 
 }
 
-func makeMessage(Receiver int, sender int, message any) c.NetworkMessage{
+func makeMessage(Receiver int, sender int, message any) util.NetworkMessage{
 
 }

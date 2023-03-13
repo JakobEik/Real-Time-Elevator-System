@@ -1,8 +1,8 @@
 package elevator
 
 import (
-	"Project/config"
 	"Project/driver"
+	"Project/utilities"
 	"fmt"
 )
 
@@ -49,13 +49,13 @@ func dirnToString(dir driver.MotorDirection) string {
 	}
 }
 
-func ebToString(eb config.Behavior) string {
+func ebToString(eb utilities.Behavior) string {
 	switch eb {
-	case config.Idle:
+	case utilities.Idle:
 		return "EB_Idle"
-	case config.DoorOpen:
+	case utilities.DoorOpen:
 		return "EB_DoorOpen"
-	case config.Moving:
+	case utilities.Moving:
 		return "EB_Moving"
 	default:
 		return "EB_UNDEFINED"
