@@ -1,9 +1,9 @@
 package assigner
 
 import (
+	util "Project/config"
 	drv "Project/driver"
 	e "Project/elevator"
-	util "Project/utilities"
 	"math"
 )
 
