@@ -1,22 +1,22 @@
 package main
 
 import (
+	"Project/config"
 	d "Project/distributor"
 	drv "Project/driver"
 	e "Project/elevator"
 	"Project/network/bcast"
 	"Project/network/peers"
-	"Project/utilities"
 )
 
-const bufferSize = utilities.N_ELEVATORS * 11
+const bufferSize = config.N_ELEVATORS * 11
 
 func main() {
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
 	ch_peerTxEnable := make(chan bool)
-	ch_messageToNetwork := make(chan utilities.NetworkMessage, bufferSize*10)
-	ch_messageFromNetwork := make(chan utilities.NetworkMessage, bufferSize*10)
+	ch_messageToNetwork := make(chan config.NetworkMessage, bufferSize*10)
+	ch_messageFromNetwork := make(chan config.NetworkMessage, bufferSize*10)
 
 	// channels for distributor
 	ch_localStateUpdated := make(chan e.ElevatorState)
@@ -33,7 +33,7 @@ func main() {
 
 	//channel_DoorTimer := make(chan bool)
 
-	drv.Init("localhost:15657", utilities.N_FLOORS)
+	drv.Init("localhost:15657", config.N_FLOORS)
 	// Driver go routines
 	go drv.PollButtons(ch_buttons)
 	go drv.PollFloorSensor(ch_floorArrival)
