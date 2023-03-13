@@ -6,6 +6,7 @@ import (
 	e "Project/elevator"
 	"Project/network/peers"
 	"Project/utils"
+	"fmt"
 	//"Project/network/peers"
 )
 
@@ -40,7 +41,9 @@ func Distributor(
 }
 
 func newLocalOrderEvent(order drv.ButtonEvent, ch_messageToNetwork chan<- c.NetworkMessage, masterID int) {
-
+	msg := utils.CreateMessage(masterID, masterID, order, c.NewOrder)
+	ch_messageToNetwork <- msg
+	println("sent")
 }
 
 func localStateUpdatedEvent(
@@ -55,9 +58,11 @@ func localStateUpdatedEvent(
 
 }
 func newMessageEvent(msg c.NetworkMessage, ch_doOrder chan<- drv.ButtonEvent) {
+	fmt.Println(msg)
 	switch msg.MsgType {
 	case c.DoOrder:
 		m := msg.Msg.(drv.ButtonEvent)
 		ch_doOrder <- m
+
 	}
 }
