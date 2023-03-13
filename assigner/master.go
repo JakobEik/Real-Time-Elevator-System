@@ -3,19 +3,18 @@ package assigner
 import (
 	p "Project/network/peers"
 	util "Project/utilities"
-
 	//drv "Project/driver"
 )
 
 func master(
 	ch_peerUpdate chan p.PeerUpdate, //maybe remove??
-	ch_peerTxEnable chan bool,       //maybe remove??
-	ch_messageToNetwork <-chan util.NetworkMessage,
-	ch_messageFromNetwork chan<- util.NetworkMessage) {
+	ch_peerTxEnable chan bool, //maybe remove??
+	ch_messageToNetwork chan<- util.NetworkMessage,
+	ch_messageFromNetwork <-chan util.NetworkMessage) {
 
 	for {
 		select {
-		case message := <-ch_messageToNetwork:
+		case message := <-ch_messageFromNetwork:
 			switch message.MsgType {
 			case util.GlobalState:
 
