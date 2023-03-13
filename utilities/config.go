@@ -27,20 +27,13 @@ const (
 	DoOrder
 	ChangeYourState
 	MsgReceived
+	LocalStateChange
 )
 
 type NetworkMessage struct {
 	SenderID   int
 	ReceiverID int
+	MasterID   int
 	Msg        any
 	MsgType    MessageType
 }
-
-/*type RequestState int
-
-const (
-	None      RequestState = 0
-	NewOrder  RequestState = 1
-	Confirmed RequestState = 2
-	Complete  RequestState = 3
-)*/

@@ -10,14 +10,11 @@ func InitGlobalState() []e.ElevatorState {
 	return globalState
 }
 
-func CreateMessage(
-	SenderID int,
-	ReceiverID int,
-	Msg any,
-	MsgType MessageType) NetworkMessage {
+func CreateMessage(receiverID int, masterID int, msg any, msgType MessageType) NetworkMessage {
 	return NetworkMessage{
-		SenderID:   SenderID,
-		ReceiverID: ReceiverID,
-		Msg:        Msg,
-		MsgType:    MsgType}
+		SenderID:   ElevatorID,
+		MasterID:   masterID,
+		ReceiverID: receiverID,
+		Msg:        msg,
+		MsgType:    msgType}
 }
