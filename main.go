@@ -29,20 +29,20 @@ func main() {
 	ch_stop := make(chan bool)
 
 	// Channels for Elevio driver
-	ch_buttons := make(chan drv.ButtonEvent, bufferSize)
+	//ch_buttons := make(chan drv.ButtonEvent, bufferSize)
 
 	//channel_DoorTimer := make(chan bool)
 
-	drv.Init("localhost:15657", config.N_FLOORS)
+	drv.Init("localhost:12346", config.N_FLOORS)
 	// Driver go routines
-	go drv.PollButtons(ch_buttons)
+	go drv.PollButtons(ch_newLocalOrder)
 	go drv.PollFloorSensor(ch_floorArrival)
 	go drv.PollObstructionSwitch(ch_obstruction)
 	go drv.PollStopButton(ch_stop)
 
 	// Networking go routines
-	go bcast.Transmitter(15600, ch_messageToNetwork)
-	go bcast.Receiver(15600, ch_messageFromNetwork)
+	go bcast.Transmitter(20321, ch_messageToNetwork)
+	go bcast.Receiver(20321, ch_messageFromNetwork)
 
 	go d.Distributor(
 		ch_doOrder,
@@ -50,7 +50,7 @@ func main() {
 		ch_newLocalOrder,
 		ch_peerUpdate,
 		ch_peerTxEnable,
-		ch_messageFromNetwork,
+		ch_messageToNetwork,
 		ch_messageFromNetwork)
 
 	e.Fsm(ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated)
