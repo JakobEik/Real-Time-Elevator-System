@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Project/assigner"
 	"Project/config"
 	d "Project/distributor"
 	drv "Project/driver"
@@ -54,6 +55,6 @@ func main() {
 		ch_peerTxEnable,
 		ch_messageToNetwork,
 		ch_messageFromNetwork)
-
+	go assigner.Master(ch_peerUpdate, ch_peerTxEnable, ch_messageToNetwork, ch_messageFromNetwork)	
 	e.Fsm(ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated)
 }

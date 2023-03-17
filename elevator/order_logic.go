@@ -5,6 +5,10 @@ import (
 	drv "Project/driver"
 )
 
+func ordersIsEmpty(e *ElevatorState) bool{
+	return !ordersAbove(e) && !ordersBelow(e) && !ordersHere(e)
+}
+
 func ordersAbove(e *ElevatorState) bool {
 	for f := e.Floor + 1; f < c.N_FLOORS; f++ {
 		for btn := 0; btn < c.N_BUTTONS; btn++ {
@@ -96,15 +100,14 @@ func shouldStop(e *ElevatorState) bool {
 
 func shouldClearImmediatly(e *ElevatorState, floor int, btn_type drv.ButtonType) bool {
 
-	return e.Floor == floor &&
+	return e.Floor == floor /*&& e.Behavior != c.Moving*/ && (
 		(e.Direction == drv.MD_Up && btn_type == drv.BT_HallUp) ||
 		(e.Direction == drv.MD_Down && btn_type == drv.BT_HallDown) ||
-		(e.Direction == drv.MD_Stop || btn_type == drv.BT_Cab)
+		(e.Direction == drv.MD_Stop || btn_type == drv.BT_Cab))
 }
 
 func clearFloor(e *ElevatorState, btn_type drv.ButtonType) {
 	e.Orders[e.Floor][btn_type] = false
-	drv.SetButtonLamp(btn_type, e.Floor, false)
 }
 
 func clearAtCurrentFloor(e *ElevatorState) {
