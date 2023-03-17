@@ -3,6 +3,9 @@ package utils
 import (
 	"Project/config"
 	e "Project/elevator"
+	"fmt"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 func InitGlobalState() []e.ElevatorState {
@@ -20,4 +23,24 @@ func CreateMessage(receiverID int, masterID int, msg any, msgType config.Message
 		ReceiverID: receiverID,
 		Msg:        msg,
 		MsgType:    msgType}
+}
+
+func ConvertMapToStruct(data map[string]interface{}, myStruct interface{}){
+
+	// Use mapstructure to map the data from the map to the struct
+	config := &mapstructure.DecoderConfig{
+		ErrorUnused: true,
+		Result:      &myStruct,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if err := decoder.Decode(data); err != nil {
+		fmt.Println(err)
+	}
+
+	//fmt.Printf("%+v\n", myStruct)
+	//fmt.Printf("t1: %T\n", myStruct)
+
 }

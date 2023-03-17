@@ -3,52 +3,48 @@ package assigner
 import (
 	c "Project/config"
 	"Project/driver"
-	"Project/elevator"
+	e "Project/elevator"
 	p "Project/network/peers"
 	u "Project/utils"
+	"fmt"
 	"math"
+
 	//drv "Project/driver"
 )
 
-func master(
+func Master(
 	ch_peerUpdate chan p.PeerUpdate, //maybe remove??
 	ch_peerTxEnable chan bool, //maybe remove??
 	ch_messageToNetwork chan<- c.NetworkMessage,
 	ch_messageFromNetwork <-chan c.NetworkMessage) {
 
-	GlobalState := u.InitGlobalState()
-	Gs_pt := &GlobalState
+	globalState := u.InitGlobalState()
+
 
 	for {
 		select {
+		
 		case message := <-ch_messageFromNetwork:
 			switch message.MsgType {
 			case c.NewOrder:
-				order := message.Msg.(driver.ButtonEvent)
-				lowestCostElevator := calculateCost(GlobalState, order)
-				msg := makeMessage(lowestCostElevator, order, c.DoOrder)
-				ch_messageToNetwork <- msg
+				newOrderEvent(message, globalState, ch_messageToNetwork)
 
 			case c.OrderDone:
-				ElevatorID := message.SenderID
-
-				UpdateGlobalState(Gs_pt, ElevatorID, message)
-				msg := makeMessage(c.ToEveryone, GlobalState, c.ChangeYourState)
-				ch_messageToNetwork <- msg
+				orderDoneEvent(message, &globalState, ch_messageToNetwork)
 
 			case c.MsgReceived:
 				ElevatorID := message.SenderID
 
-				UpdateGlobalState(Gs_pt, ElevatorID, message)
-				msg := makeMessage(c.ToEveryone, GlobalState, c.ChangeYourState)
+				UpdateGlobalState(&globalState, ElevatorID, message)
+				msg := makeMessage(c.ToEveryone, globalState, c.ChangeYourState)
 				ch_messageToNetwork <- msg
 
 			case c.LocalStateChange:
 				ElevatorID := message.SenderID
-				UpdateGlobalState(Gs_pt, ElevatorID, message)
-
-				msg := makeMessage(c.ToEveryone, GlobalState, c.ChangeYourState)
-				ch_messageToNetwork <- msg
+				UpdateGlobalState(&globalState, ElevatorID, message)
+				fmt.Println(globalState[ElevatorID].Floor)
+				//msg := makeMessage(c.ToEveryone, globalState, c.ChangeYourState)
+				//ch_messageToNetwork <- msg
 			}
 
 		}
@@ -57,7 +53,21 @@ func master(
 
 }
 
-func calculateCost(GlobalState []elevator.ElevatorState, order driver.ButtonEvent) int {
+func newOrderEvent(message c.NetworkMessage, globalState []e.ElevatorState, ch_messageToNetwork chan<- c.NetworkMessage){
+	order := message.Msg.(driver.ButtonEvent)
+	lowestCostElevator := calculateCost(globalState, order)
+	msg := makeMessage(lowestCostElevator, order, c.DoOrder)
+	ch_messageToNetwork <- msg
+}
+
+func orderDoneEvent(message c.NetworkMessage, globalState *[]e.ElevatorState, ch_messageToNetwork chan<- c.NetworkMessage){
+	ElevatorID := message.SenderID
+	UpdateGlobalState(globalState, ElevatorID, message)
+	msg := makeMessage(c.ToEveryone, globalState, c.ChangeYourState)
+	ch_messageToNetwork <- msg
+}
+
+func calculateCost(GlobalState []e.ElevatorState, order driver.ButtonEvent) int {
 
 	var lowestCostID int
 	cost := int(math.Inf(1))
@@ -85,8 +95,15 @@ func makeMessage(receverID int, message any, messagetype c.MessageType) c.Networ
 	return msg
 }
 
-func UpdateGlobalState(GlobalState *[]elevator.ElevatorState, elevatorID int, message c.NetworkMessage) {
-
+func UpdateGlobalState(globalState *[]e.ElevatorState, elevatorID int, message c.NetworkMessage) {
+	state := message.Msg.(map[string]interface{})
+	fmt.Println(state)
+	var newState e.ElevatorState
+	u.ConvertMapToStruct(state, &newState)
+	
+	(*globalState)[elevatorID] = newState
+	
+	/*
 	if message.MsgType == c.OrderDone || message.MsgType == c.MsgReceived {
 		order := message.Msg.(driver.ButtonEvent)
 		if (*GlobalState)[elevatorID].Orders[order.Floor][order.Button] {
@@ -95,7 +112,7 @@ func UpdateGlobalState(GlobalState *[]elevator.ElevatorState, elevatorID int, me
 			(*GlobalState)[elevatorID].Orders[order.Floor][order.Button] = true
 		}
 	} else if message.MsgType == c.LocalStateChange {
-		state := message.Msg.(elevator.ElevatorState)
+		state := message.Msg.(e.ElevatorState)
 		(*GlobalState)[elevatorID] = state
-	}
+	}*/
 }
