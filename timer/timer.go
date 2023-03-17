@@ -1,44 +1,36 @@
 package timer
 
-import (
-	"Project/config"
-	"time"
-)
 
-func DoorTimer(channel_DoorTimer chan<- bool) {
-	for obstruction {
-		time.Sleep(time.Second * config.DoorOpenDuration)
+import "fmt"
+import "time"
+
+type TimerBehavior struct{
+	Start bool
+	Duration time.Duration
+}
+
+func Timer(ch_timer <-chan TimerBehavior, ch_timerDone chan<- bool) {
+	timer := time.NewTimer(time.Second *2)
+	timer.Stop()
+	
+	for{
+		select{
+		case behavior := <- ch_timer:
+			if behavior.Start {
+				timer.Stop()
+				timer.Reset(behavior.Duration)
+				fmt.Println("New Timer")
+				ch_timerDone <- false
+			}else{
+				timer.Stop()
+				fmt.Println("STOP")
+				ch_timerDone <- false
+			}
+
+		case <- timer.C:
+			fmt.Println("finished timer")
+			ch_timerDone <- true
+		}
+		
 	}
-	channel_DoorTimer <- true
 }
-
-/*package timer
-
-import (
-	"syscall"
-)
-
-func getWallTime() float64 {
-	var t syscall.Timeval
-	syscall.Gettimeofday(&t)
-	return float64(t.Sec) + float64(t.Usec)*0.000001
-}
-
-var (
-	timerEndTime float64
-	timerActive  bool
-)
-
-func timerStart(duration float64) {
-	timerEndTime = getWallTime() + duration
-	timerActive = true
-}
-
-func timerStop() {
-	timerActive = false
-}
-
-func timerTimedOut() bool {
-	return timerActive && getWallTime() > timerEndTime
-}
-*/
