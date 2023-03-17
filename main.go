@@ -33,7 +33,9 @@ func main() {
 
 	//channel_DoorTimer := make(chan bool)
 
-	drv.Init("localhost:12346", config.N_FLOORS)
+	drv.Init("localhost:15657", config.N_FLOORS)
+	//drv.Init("localhost:12346", config.N_FLOORS)
+
 	// Driver go routines
 	go drv.PollButtons(ch_newLocalOrder)
 	go drv.PollFloorSensor(ch_floorArrival)

@@ -107,7 +107,7 @@ func clearFloor(e *ElevatorState, btn_type drv.ButtonType) {
 	drv.SetButtonLamp(btn_type, e.Floor, false)
 }
 
-func clearAtCurrentFloor(e *ElevatorState) { // FEIL HER 08.03
+func clearAtCurrentFloor(e *ElevatorState) {
 
 	clearFloor(e, drv.BT_Cab)
 	switch e.Direction {
@@ -128,4 +128,15 @@ func clearAtCurrentFloor(e *ElevatorState) { // FEIL HER 08.03
 		clearFloor(e, drv.BT_HallDown)
 		clearFloor(e, drv.BT_HallUp)
 	}
+}
+
+func clearAllFloors(e *ElevatorState){
+	orders := make([][]bool, 0)
+	for floor := 0; floor < c.N_FLOORS; floor++ {
+		orders = append(orders, make([]bool, c.N_BUTTONS))
+		for button := range orders[floor] {
+			orders[floor][button] = false
+		}
+	}
+	e.Orders = orders
 }
