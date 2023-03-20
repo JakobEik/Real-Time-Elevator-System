@@ -8,11 +8,17 @@ import (
 	e "Project/elevator"
 	"Project/network/bcast"
 	"Project/network/peers"
+	"os"
+	"strconv"
 )
 
 const bufferSize = config.N_ELEVATORS * 11
 
 func main() {
+
+	port := os.Args[1]
+	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
+
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
 	ch_peerTxEnable := make(chan bool)
@@ -34,8 +40,8 @@ func main() {
 
 	//channel_DoorTimer := make(chan bool)
 
-	drv.Init("localhost:15657", config.N_FLOORS)
-	//drv.Init("localhost:12346", config.N_FLOORS)
+	//drv.Init("localhost:15657", config.N_FLOORS)
+	drv.Init("localhost:"+port, config.N_FLOORS)
 
 	// Driver go routines
 	go drv.PollButtons(ch_newLocalOrder)
@@ -55,6 +61,6 @@ func main() {
 		ch_peerTxEnable,
 		ch_messageToNetwork,
 		ch_messageFromNetwork)
-	go assigner.Master(ch_peerUpdate, ch_peerTxEnable, ch_messageToNetwork, ch_messageFromNetwork)	
+	go assigner.Master(ch_peerUpdate, ch_peerTxEnable, ch_messageToNetwork, ch_messageFromNetwork)
 	e.Fsm(ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated)
 }

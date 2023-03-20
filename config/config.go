@@ -5,9 +5,10 @@ import "time"
 const N_FLOORS = 4
 const N_BUTTONS = 3
 const N_ELEVATORS = 3
-const DoorOpenDuration = time.Second * 1
+const DoorOpenDuration = time.Second * 3
 const ToEveryone = -1
-const ElevatorID = 0
+
+var ElevatorID = 0
 
 type Behavior int
 
