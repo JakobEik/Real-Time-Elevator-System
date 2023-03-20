@@ -62,7 +62,7 @@ func newMessageEvent(msg c.NetworkMessage, ch_doOrder chan<- drv.ButtonEvent) {
 	if msg.ReceiverID == c.ElevatorID {
 		switch msg.MsgType {
 		case c.DoOrder:
-			m := msg.Msg.(drv.ButtonEvent)
+			m := msg.Content.(drv.ButtonEvent)
 			ch_doOrder <- m
 
 		}

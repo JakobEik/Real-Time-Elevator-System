@@ -8,7 +8,6 @@ import (
 	u "Project/utils"
 	"fmt"
 	"math"
-
 	//drv "Project/driver"
 )
 
@@ -20,10 +19,9 @@ func Master(
 
 	globalState := u.InitGlobalState()
 
-
 	for {
 		select {
-		
+
 		case message := <-ch_messageFromNetwork:
 			switch message.MsgType {
 			case c.NewOrder:
@@ -36,7 +34,7 @@ func Master(
 				ElevatorID := message.SenderID
 
 				UpdateGlobalState(&globalState, ElevatorID, message)
-				msg := makeMessage(c.ToEveryone, globalState, c.ChangeYourState)
+				msg := u.CreateMessage(c.ToEveryone, c.ElevatorID, globalState, c.ChangeYourState)
 				ch_messageToNetwork <- msg
 
 			case c.LocalStateChange:
@@ -53,17 +51,17 @@ func Master(
 
 }
 
-func newOrderEvent(message c.NetworkMessage, globalState []e.ElevatorState, ch_messageToNetwork chan<- c.NetworkMessage){
-	order := message.Msg.(driver.ButtonEvent)
+func newOrderEvent(message c.NetworkMessage, globalState []e.ElevatorState, ch_messageToNetwork chan<- c.NetworkMessage) {
+	order := message.Content.(driver.ButtonEvent)
 	lowestCostElevator := calculateCost(globalState, order)
-	msg := makeMessage(lowestCostElevator, order, c.DoOrder)
+	msg := u.CreateMessage(lowestCostElevator, c.ElevatorID, order, c.DoOrder)
 	ch_messageToNetwork <- msg
 }
 
-func orderDoneEvent(message c.NetworkMessage, globalState *[]e.ElevatorState, ch_messageToNetwork chan<- c.NetworkMessage){
+func orderDoneEvent(message c.NetworkMessage, globalState *[]e.ElevatorState, ch_messageToNetwork chan<- c.NetworkMessage) {
 	ElevatorID := message.SenderID
 	UpdateGlobalState(globalState, ElevatorID, message)
-	msg := makeMessage(c.ToEveryone, globalState, c.ChangeYourState)
+	msg := u.CreateMessage(c.ToEveryone, c.ElevatorID, globalState, c.ChangeYourState)
 	ch_messageToNetwork <- msg
 }
 
@@ -84,35 +82,24 @@ func calculateCost(GlobalState []e.ElevatorState, order driver.ButtonEvent) int 
 	return lowestCostID
 }
 
-func makeMessage(receverID int, message any, messagetype c.MessageType) c.NetworkMessage {
-	msg := c.NetworkMessage{}
-	msg.SenderID = c.ElevatorID
-	msg.MasterID = c.ElevatorID
-	msg.ReceiverID = receverID
-	msg.Msg = message
-	msg.MsgType = messagetype
-
-	return msg
-}
-
 func UpdateGlobalState(globalState *[]e.ElevatorState, elevatorID int, message c.NetworkMessage) {
-	state := message.Msg.(map[string]interface{})
+	state := message.Content.(map[string]interface{})
 	fmt.Println(state)
 	var newState e.ElevatorState
 	u.ConvertMapToStruct(state, &newState)
-	
+
 	(*globalState)[elevatorID] = newState
-	
+
 	/*
-	if message.MsgType == c.OrderDone || message.MsgType == c.MsgReceived {
-		order := message.Msg.(driver.ButtonEvent)
-		if (*GlobalState)[elevatorID].Orders[order.Floor][order.Button] {
-			(*GlobalState)[elevatorID].Orders[order.Floor][order.Button] = false
-		} else {
-			(*GlobalState)[elevatorID].Orders[order.Floor][order.Button] = true
-		}
-	} else if message.MsgType == c.LocalStateChange {
-		state := message.Msg.(e.ElevatorState)
-		(*GlobalState)[elevatorID] = state
-	}*/
+		if message.MsgType == c.OrderDone || message.MsgType == c.MsgReceived {
+			order := message.Content.(driver.ButtonEvent)
+			if (*GlobalState)[elevatorID].Orders[order.Floor][order.Button] {
+				(*GlobalState)[elevatorID].Orders[order.Floor][order.Button] = false
+			} else {
+				(*GlobalState)[elevatorID].Orders[order.Floor][order.Button] = true
+			}
+		} else if message.MsgType == c.LocalStateChange {
+			state := message.Content.(e.ElevatorState)
+			(*GlobalState)[elevatorID] = state
+		}*/
 }

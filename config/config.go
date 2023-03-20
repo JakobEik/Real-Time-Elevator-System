@@ -9,7 +9,6 @@ const DoorOpenDuration = time.Second * 1
 const ToEveryone = -1
 const ElevatorID = 0
 
-
 type Behavior int
 
 const (
@@ -37,6 +36,11 @@ type NetworkMessage struct {
 	SenderID   int
 	ReceiverID int
 	MasterID   int
-	Msg        any
+	Content    any
 	MsgType    MessageType
+}
+
+type Packet struct {
+	Message  NetworkMessage
+	Checksum int
 }
