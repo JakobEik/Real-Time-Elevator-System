@@ -10,8 +10,8 @@ import (
 
 func InitGlobalState() []e.ElevatorState {
 	globalState := make([]e.ElevatorState, config.N_ELEVATORS)
-	for i := 0; i < config.N_ELEVATORS-1; i++ {
-		globalState = append(globalState, e.InitElev())
+	for i := 0; i < config.N_ELEVATORS; i++ {
+		globalState[i] = e.InitElev(0)
 	}
 	return globalState
 }

@@ -21,7 +21,7 @@ func Distributor(
 	var masterID = 0
 
 	//globalState := c.InitGlobalState()
-	localElevatorState := e.InitElev()
+	localElevatorState := e.InitElev(0)
 	// Ask network if they have a global state: true => globalState = this state, else
 	if false {
 		//TODO
@@ -41,9 +41,8 @@ func Distributor(
 
 func newLocalOrderEvent(order drv.ButtonEvent, ch_messageToNetwork chan<- c.NetworkMessage, masterID int) {
 	msg := utils.CreateMessage(masterID, masterID, order, c.NewOrder)
-	fmt.Println(msg)
+	fmt.Println("order sent:", msg)
 	ch_messageToNetwork <- msg
-	println("sent")
 }
 
 func localStateUpdatedEvent(
@@ -58,12 +57,15 @@ func localStateUpdatedEvent(
 
 }
 func newMessageEvent(msg c.NetworkMessage, ch_doOrder chan<- drv.ButtonEvent) {
-	fmt.Println(msg)
+
 	if msg.ReceiverID == c.ElevatorID {
 		switch msg.MsgType {
 		case c.DoOrder:
-			m := msg.Content.(drv.ButtonEvent)
-			ch_doOrder <- m
+			fmt.Println("Order received:", msg.Content)
+			content := msg.Content.(map[string]interface{})
+			var order drv.ButtonEvent
+			utils.ConvertMapToStruct(content, &order)
+			ch_doOrder <- order
 
 		}
 
