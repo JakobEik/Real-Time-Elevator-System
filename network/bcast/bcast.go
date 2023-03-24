@@ -23,7 +23,6 @@ func Transmitter(port int, chans ...interface{}) {
 		}
 		typeNames[i] = reflect.TypeOf(ch).Elem().String()
 	}
-
 	conn := conn.DialBroadcastUDP(port)
 	addr, _ := net.ResolveUDPAddr("udp4", fmt.Sprintf("255.255.255.255:%d", port))
 	for {
@@ -41,12 +40,14 @@ func Transmitter(port int, chans ...interface{}) {
 		}
 		conn.WriteTo(ttj, addr)
 
+
 	}
 }
 
 // Matches type-tagged JSON received on `port` to element types of `chans`, then
 // sends the decoded value on the corresponding channel
 func Receiver(port int, chans ...interface{}) {
+	
 	checkArgs(chans...)
 	chansMap := make(map[string]interface{})
 	for _, ch := range chans {

@@ -13,7 +13,7 @@ type ElevatorState struct {
 }
 
 // Init elevator at floor 0 and in idle state:
-func InitElev() ElevatorState {
+func InitElev(floor int) ElevatorState {
 	orders := make([][]bool, 0)
 	for floor := 0; floor < config.N_FLOORS; floor++ {
 		orders = append(orders, make([]bool, config.N_BUTTONS))
@@ -23,7 +23,7 @@ func InitElev() ElevatorState {
 	}
 
 	return ElevatorState{
-		Floor:     0,
+		Floor:     floor,
 		Direction: driver.MD_Stop,
 		Orders:    orders,
 		Behavior:  config.Idle}
