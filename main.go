@@ -6,6 +6,7 @@ import (
 	d "Project/distributor"
 	drv "Project/driver"
 	e "Project/elevator"
+	"Project/network"
 	"Project/network/bcast"
 	"Project/network/peers"
 	"os"
@@ -22,29 +23,36 @@ func main() {
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
 	ch_peerTxEnable := make(chan bool)
-	ch_messageToNetwork := make(chan config.NetworkMessage, bufferSize*10)
-	ch_messageFromNetwork := make(chan config.NetworkMessage, bufferSize*10)
+	ch_messageToNetwork := make(chan config.Packet, 512)
+	ch_messageFromNetwork := make(chan config.Packet, 512)
 
-	// channels for distributor
+	// Channels between master and network
+	ch_calculateNewOrder := make(chan drv.ButtonEvent, 32)
+	ch_localStateToMaster := make(chan assigner.StateMessage, 32)
+	ch_orderCalculated := make(chan assigner.OrderMessage, 32)
+	ch_updateGlobalStateDemand := make(chan []e.ElevatorState, 32)
+
+	// Channels between distributor and network
+	ch_doOrder := make(chan drv.ButtonEvent, 32)
+	ch_updateGlobalState := make(chan []e.ElevatorState, 32)
+	ch_localStateFromLocal := make(chan e.ElevatorState, 32)
+	ch_newLocalOrder := make(chan drv.ButtonEvent, 32)
+
+	// channels between distributor and FSM
 	ch_localStateUpdated := make(chan e.ElevatorState)
-	ch_newLocalOrder := make(chan drv.ButtonEvent)
+	ch_executeOrder := make(chan drv.ButtonEvent, bufferSize)
 
-	// channels for FSM
-	ch_doOrder := make(chan drv.ButtonEvent, bufferSize)
+	// Channels between driver and FSM
+	ch_buttonPress := make(chan drv.ButtonEvent)
 	ch_floorArrival := make(chan int, bufferSize)
 	ch_obstruction := make(chan bool, bufferSize)
 	ch_stop := make(chan bool)
-
-	// Channels for Elevio driver
-	//ch_buttons := make(chan drv.ButtonEvent, bufferSize)
-
-	//channel_DoorTimer := make(chan bool)
 
 	//drv.Init("localhost:15657", config.N_FLOORS)
 	drv.Init("localhost:"+port, config.N_FLOORS)
 
 	// Driver go routines
-	go drv.PollButtons(ch_newLocalOrder)
+	go drv.PollButtons(ch_buttonPress)
 	go drv.PollFloorSensor(ch_floorArrival)
 	go drv.PollObstructionSwitch(ch_obstruction)
 	go drv.PollStopButton(ch_stop)
@@ -56,11 +64,30 @@ func main() {
 	go d.Distributor(
 		ch_doOrder,
 		ch_localStateUpdated,
+		ch_buttonPress,
+		ch_updateGlobalState,
+		ch_localStateFromLocal,
 		ch_newLocalOrder,
+		ch_executeOrder)
+
+	go assigner.MasterNode(
 		ch_peerUpdate,
 		ch_peerTxEnable,
+
+		ch_calculateNewOrder,
+		ch_localStateToMaster,
+		ch_orderCalculated,
+		ch_updateGlobalStateDemand)
+
+	go network.NetworkHandler(
+		ch_messageFromNetwork,
 		ch_messageToNetwork,
-		ch_messageFromNetwork)
-	go assigner.Master(ch_peerUpdate, ch_peerTxEnable, ch_messageToNetwork, ch_messageFromNetwork)
-	e.Fsm(ch_doOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated)
+		ch_calculateNewOrder,
+		ch_localStateToMaster,
+		ch_doOrder,
+		ch_updateGlobalState,
+		ch_orderCalculated,
+		ch_updateGlobalStateDemand, ch_localStateFromLocal, ch_newLocalOrder)
+
+	e.Fsm(ch_executeOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated)
 }

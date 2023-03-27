@@ -1,44 +1,65 @@
 package distributor
 
 import (
-	c "Project/config"
 	drv "Project/driver"
 	e "Project/elevator"
-	"Project/network/peers"
 	"Project/utils"
 	"fmt"
 	//"Project/network/peers"
 )
 
 func Distributor(
-	ch_doOrder chan<- drv.ButtonEvent,
+	ch_doOrder <-chan drv.ButtonEvent,
 	ch_localStateUpdated <-chan e.ElevatorState,
-	ch_newLocalOrder <-chan drv.ButtonEvent,
-	ch_peerUpdate chan peers.PeerUpdate,
-	ch_peerTxEnable chan bool,
-	ch_messageToNetwork chan<- c.NetworkMessage,
-	ch_messageFromNetwork <-chan c.NetworkMessage) {
-	var masterID = 0
+	ch_buttonPress <-chan drv.ButtonEvent,
+	ch_updateGlobalState <-chan []e.ElevatorState,
+	ch_localStateFromLocal chan<- e.ElevatorState,
+	ch_newLocalOrder chan<- drv.ButtonEvent,
+	ch_executeOrder chan<- drv.ButtonEvent) {
 
+<<<<<<< HEAD
+
+	globalState := utils.InitGlobalState()
+	println(globalState)
+	localElevatorState := e.InitElev(0)
+	fmt.Println(localElevatorState)
+=======
 	//globalState := c.InitGlobalState()
 	localElevatorState := e.InitElev(0)
+>>>>>>> e6828a179660c35014b6bcf5dab0d9db9fce18e5
 	// Ask network if they have a global state: true => globalState = this state, else
 	if false {
 		//TODO
 	}
 	for {
 		select {
+<<<<<<< HEAD
+		case order := <-ch_buttonPress:
+			if order.Button == drv.BT_Cab {
+				ch_executeOrder <- order
+			}else{
+				ch_newLocalOrder <- order
+				fmt.Println("order sent")
+			}
+
+=======
 		case newLocalOrder := <-ch_newLocalOrder:
 			newLocalOrderEvent(newLocalOrder, ch_messageToNetwork, masterID)
+>>>>>>> e6828a179660c35014b6bcf5dab0d9db9fce18e5
 		case newLocalState := <-ch_localStateUpdated:
-			localStateUpdatedEvent(newLocalState, localElevatorState, ch_messageToNetwork, masterID)
-		case msg := <-ch_messageFromNetwork:
-			newMessageEvent(msg, ch_doOrder)
+			localElevatorState = newLocalState
+			ch_localStateFromLocal <- newLocalState
+		case state := <-ch_updateGlobalState:
+			globalState = state
+		case order := <-ch_doOrder:
+			ch_executeOrder <- order	
 		}
 
 	}
 }
 
+<<<<<<< HEAD
+=======
 func newLocalOrderEvent(order drv.ButtonEvent, ch_messageToNetwork chan<- c.NetworkMessage, masterID int) {
 	msg := utils.CreateMessage(masterID, masterID, order, c.NewOrder)
 	fmt.Println("order sent:", msg)
@@ -71,3 +92,4 @@ func newMessageEvent(msg c.NetworkMessage, ch_doOrder chan<- drv.ButtonEvent) {
 
 	}
 }
+>>>>>>> e6828a179660c35014b6bcf5dab0d9db9fce18e5

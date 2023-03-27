@@ -16,13 +16,35 @@ func InitGlobalState() []e.ElevatorState {
 	return globalState
 }
 
-func CreateMessage(receiverID int, masterID int, content any, msgType config.MessageType) config.NetworkMessage {
-	return config.NetworkMessage{
+func CreatePacket(receiverID int, content any, msgType config.MessageType) config.Packet {
+	msg := config.NetworkMessage{
 		SenderID:   config.ElevatorID,
-		MasterID:   masterID,
+		MasterID:   0,
 		ReceiverID: receiverID,
 		Content:    content,
 		MsgType:    msgType}
+
+	return config.Packet{Msg: msg, Checksum: 0}
+}
+
+func CastToType(data map[string]interface{}, myStruct interface{}) {
+
+	// Use mapstructure to map the data from the map to the struct
+	config := &mapstructure.DecoderConfig{
+		ErrorUnused: true,
+		Result:      &myStruct,
+	}
+	decoder, err := mapstructure.NewDecoder(config)
+	if err != nil {
+		fmt.Println(err)
+	}
+	if err := decoder.Decode(data); err != nil {
+		fmt.Println(err)
+	}
+
+	//fmt.Printf("%+v\n", myStruct)
+	//fmt.Printf("t1: %T\n", myStruct)
+
 }
 
 func ConvertMapToStruct(data map[string]interface{}, myStruct interface{}) {

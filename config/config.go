@@ -13,22 +13,18 @@ var ElevatorID = 0
 type Behavior int
 
 const (
-	Idle        Behavior = 0
-	DoorOpen             = 1
-	Moving               = 2
-	Unavailable          = 3
+	Idle Behavior = iota
+	DoorOpen
+	Moving
+	Unavailable
 )
 
 type MessageType int
 
 const (
-	GlobalState MessageType = iota
-	NewOrder
-	OrderDone
-	OrderAccepted
-	RequestGlobalState
+	NewOrder MessageType = iota
 	DoOrder
-	ChangeYourState
+	UpdateGlobalState
 	MsgReceived
 	LocalStateChange
 )
@@ -37,11 +33,11 @@ type NetworkMessage struct {
 	SenderID   int
 	ReceiverID int
 	MasterID   int
-	Content    any
 	MsgType    MessageType
+	Content    any
 }
 
 type Packet struct {
-	Message  NetworkMessage
+	Msg      NetworkMessage
 	Checksum int
 }

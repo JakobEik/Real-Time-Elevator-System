@@ -8,7 +8,7 @@ import (
 )
 
 func Fsm(
-	ch_doOrder <-chan drv.ButtonEvent,
+	ch_executeOrder <-chan drv.ButtonEvent,
 	ch_floorArrival <-chan int,
 	ch_obstruction <-chan bool,
 	ch_stop <-chan bool,
@@ -25,7 +25,7 @@ func Fsm(
 	nextOrder(&elev)
 	for {
 		select {
-		case order := <-ch_doOrder:
+		case order := <-ch_executeOrder:
 			fmt.Println("NEW ORDER:", order)
 			if !obstruct {
 				onNewOrderEvent(order, &elev, doorTimer)
