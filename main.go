@@ -73,16 +73,17 @@ func main() {
 	go assigner.MasterNode(
 		ch_peerUpdate,
 		ch_peerTxEnable,
+
 		ch_calculateNewOrder,
 		ch_localStateToMaster,
 		ch_orderCalculated,
 		ch_updateGlobalStateDemand)
 
 	go network.NetworkHandler(
-		ch_messageFromNetwork, 
-		ch_messageToNetwork, 
-		ch_calculateNewOrder, 
-		ch_localStateToMaster, 
+		ch_messageFromNetwork,
+		ch_messageToNetwork,
+		ch_calculateNewOrder,
+		ch_localStateToMaster,
 		ch_doOrder,
 		ch_updateGlobalState,
 		ch_orderCalculated,

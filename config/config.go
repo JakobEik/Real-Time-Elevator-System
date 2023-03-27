@@ -1,8 +1,6 @@
 package config
 
-import (
-	"time"
-)
+import "time"
 
 const N_FLOORS = 4
 const N_BUTTONS = 3
@@ -43,6 +41,3 @@ type Packet struct {
 	Msg      NetworkMessage
 	Checksum int
 }
-
-
-
