@@ -19,17 +19,17 @@ func Cost3(state e.ElevatorState, order drv.ButtonEvent) int {
 	duration := 0
 
 	switch elev.Behavior {
-	case c.Idle:
+	case c.IDLE:
 		dir, _ := chooseElevDirection(&elev)
 		elev.Direction = dir
 		if elev.Direction == drv.MD_Stop {
 			return duration
 		}
 
-	case c.Moving:
+	case c.MOVING:
 		duration += TRAVEL_TIME / 2
 		elev.Floor += int(elev.Direction)
-	case c.DoorOpen:
+	case c.DOOR_OPEN:
 		duration -= 2
 	}
 
@@ -65,7 +65,7 @@ func Cost1(elev e.ElevatorState, order drv.ButtonEvent) int {
 
 	distance := elev.Floor - order.Floor
 
-	if elev.Behavior == c.Idle && elev.Floor == order.Floor {
+	if elev.Behavior == c.IDLE && elev.Floor == order.Floor {
 		return -10000
 	}
 
@@ -96,11 +96,11 @@ func Cost(elev e.ElevatorState, order drv.ButtonEvent) int {
 	distance := int(math.Abs(float64(eFloor - ordFloor)))
 
 	switch elev.Behavior {
-	case c.DoorOpen:
+	case c.DOOR_OPEN:
 		fallthrough
-	case c.Idle:
+	case c.IDLE:
 		cost = c.N_FLOORS + 1 - distance // cost = N + 1 - d	Nearest car algorithm
-	case c.Moving:
+	case c.MOVING:
 		if (dir == drv.MD_Up && ordFloor > eFloor && ordBtn == drv.BT_HallUp) ||
 			(dir == drv.MD_Down && ordFloor < eFloor && ordBtn == drv.BT_HallDown) {
 
@@ -127,11 +127,11 @@ func Cost2(state e.ElevatorState, order drv.ButtonEvent) int { // Maybe make mor
 
 		distance := int(math.Abs(float64(currFloor) - float64(ordFloor)))
 
-		if state.Behavior != c.Unavailable {
+		if state.Behavior != c.UNAVAILABLE {
 			switch state.Behavior {
-			case c.Idle:
+			case c.IDLE:
 				cost = c.N_FLOORS + 1 - distance // cost = N + 1 - d	Nearest car algorithm
-			case c.Moving:
+			case c.MOVING:
 				if (state.Direction == drv.MD_Up && ordFloor > state.Floor && ordBtn == drv.BT_HallUp) || (state.Direction == drv.MD_Down && ordFloor < state.Floor && ordBtn == drv.BT_HallDown) {
 					cost = c.N_FLOORS + 2 - distance
 				} else if (state.Direction == drv.MD_Up && ordFloor > state.Floor && ordBtn == drv.BT_HallDown) || (state.Direction == drv.MD_Down && ordFloor < state.Floor && ordBtn == drv.BT_HallUp) {
@@ -150,36 +150,36 @@ func chooseElevDirection(e *e.ElevatorState) (drv.MotorDirection, c.Behavior) {
 	switch e.Direction {
 	case drv.MD_Up:
 		if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, c.MOVING
 		} else if ordersHere(e) {
-			return drv.MD_Stop, c.DoorOpen
+			return drv.MD_Stop, c.DOOR_OPEN
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, c.MOVING
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, c.IDLE
 		}
 	case drv.MD_Down:
 		if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, c.MOVING
 		} else if ordersHere(e) {
-			return drv.MD_Up, c.DoorOpen
+			return drv.MD_Up, c.DOOR_OPEN
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, c.MOVING
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, c.IDLE
 		}
 	case drv.MD_Stop:
 		if ordersHere(e) {
-			return drv.MD_Stop, c.DoorOpen
+			return drv.MD_Stop, c.DOOR_OPEN
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, c.MOVING
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, c.MOVING
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, c.IDLE
 		}
 	default:
-		return drv.MD_Stop, c.Idle
+		return drv.MD_Stop, c.IDLE
 	}
 }
 

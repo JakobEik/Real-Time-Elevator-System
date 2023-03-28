@@ -27,7 +27,7 @@ func CreatePacket(receiverID int, content any, msgType config.MessageType) confi
 	return config.Packet{Msg: msg, Checksum: 0}
 }
 
-func CastToType(data map[string]interface{}, myStruct interface{}) {
+func CastToType(data interface{}, myStruct interface{}) {
 
 	// Use mapstructure to map the data from the map to the struct
 	config := &mapstructure.DecoderConfig{

@@ -5,11 +5,14 @@ import (
 	drv "Project/driver"
 )
 
-func ordersIsEmpty(e *ElevatorState) bool{
+func ordersIsEmpty(e *ElevatorState) bool {
 	return !ordersAbove(e) && !ordersBelow(e) && !ordersHere(e)
 }
 
 func ordersAbove(e *ElevatorState) bool {
+	if e.Floor >= c.N_FLOORS {
+		return false
+	}
 	for f := e.Floor + 1; f < c.N_FLOORS; f++ {
 		for btn := 0; btn < c.N_BUTTONS; btn++ {
 			if e.Orders[f][btn] {
@@ -21,6 +24,9 @@ func ordersAbove(e *ElevatorState) bool {
 }
 
 func ordersBelow(e *ElevatorState) bool {
+	if e.Floor <= 0 {
+		return false
+	}
 	for f := 0; f < e.Floor; f++ {
 		for btn := 0; btn < c.N_BUTTONS; btn++ {
 			if e.Orders[f][btn] {
@@ -44,36 +50,36 @@ func chooseElevDirection(e *ElevatorState) (drv.MotorDirection, c.Behavior) {
 	switch e.Direction {
 	case drv.MD_Up:
 		if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, c.MOVING
 		} else if ordersHere(e) {
-			return drv.MD_Stop, c.DoorOpen
+			return drv.MD_Stop, c.DOOR_OPEN
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, c.MOVING
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, c.IDLE
 		}
 	case drv.MD_Down:
 		if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, c.MOVING
 		} else if ordersHere(e) {
-			return drv.MD_Up, c.DoorOpen
+			return drv.MD_Up, c.DOOR_OPEN
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, c.MOVING
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, c.IDLE
 		}
 	case drv.MD_Stop:
 		if ordersHere(e) {
-			return drv.MD_Stop, c.DoorOpen
+			return drv.MD_Stop, c.DOOR_OPEN
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.Moving
+			return drv.MD_Up, c.MOVING
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.Moving
+			return drv.MD_Down, c.MOVING
 		} else {
-			return drv.MD_Stop, c.Idle
+			return drv.MD_Stop, c.IDLE
 		}
 	default:
-		return drv.MD_Stop, c.Idle
+		return drv.MD_Stop, c.IDLE
 	}
 }
 
@@ -100,8 +106,7 @@ func shouldStop(e *ElevatorState) bool {
 
 func shouldClearImmediatly(e *ElevatorState, floor int, btn_type drv.ButtonType) bool {
 
-	return e.Floor == floor /*&& e.Behavior != c.Moving*/ && (
-		(e.Direction == drv.MD_Up && btn_type == drv.BT_HallUp) ||
+	return e.Floor == floor /*&& e.Behavior != c.MOVING*/ && ((e.Direction == drv.MD_Up && btn_type == drv.BT_HallUp) ||
 		(e.Direction == drv.MD_Down && btn_type == drv.BT_HallDown) ||
 		(e.Direction == drv.MD_Stop || btn_type == drv.BT_Cab))
 }
@@ -133,7 +138,7 @@ func clearAtCurrentFloor(e *ElevatorState) {
 	}
 }
 
-func clearAllFloors(e *ElevatorState){
+func clearAllFloors(e *ElevatorState) {
 	orders := make([][]bool, 0)
 	for floor := 0; floor < c.N_FLOORS; floor++ {
 		orders = append(orders, make([]bool, c.N_BUTTONS))

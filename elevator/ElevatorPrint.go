@@ -51,11 +51,11 @@ func dirnToString(dir driver.MotorDirection) string {
 
 func ebToString(eb config.Behavior) string {
 	switch eb {
-	case config.Idle:
+	case config.IDLE:
 		return "EB_Idle"
-	case config.DoorOpen:
+	case config.DOOR_OPEN:
 		return "EB_DoorOpen"
-	case config.Moving:
+	case config.MOVING:
 		return "EB_Moving"
 	default:
 		return "EB_UNDEFINED"

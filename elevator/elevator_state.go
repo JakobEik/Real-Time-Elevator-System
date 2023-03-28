@@ -26,6 +26,6 @@ func InitElev(floor int) ElevatorState {
 		Floor:     floor,
 		Direction: driver.MD_Stop,
 		Orders:    orders,
-		Behavior:  config.Idle}
+		Behavior:  config.IDLE}
 
 }

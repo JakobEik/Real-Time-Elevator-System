@@ -2,57 +2,66 @@ package assigner
 
 import (
 	c "Project/config"
-	"Project/driver"
+	drv "Project/driver"
 	e "Project/elevator"
 	p "Project/network/peers"
-	u "Project/utils"
+	"Project/utils"
 	"fmt"
 	//drv "Project/driver"
 )
 
-type StateMessage struct {
-	State    e.ElevatorState
-	SenderID int
-}
-
-type OrderMessage struct {
-	Order      driver.ButtonEvent
-	ReceiverID int
-}
-
 func MasterNode(
-	ch_peerUpdate chan p.PeerUpdate, //maybe remove??
-	ch_peerTxEnable chan bool, //maybe remove??
-	ch_calculateNewOrder <-chan driver.ButtonEvent,
-	ch_localStateToMaster <-chan StateMessage,
-	ch_orderCalculated chan<- OrderMessage,
-	ch_updateGlobalStateDemand chan<- []e.ElevatorState) {
+	ch_peerUpdate chan p.PeerUpdate,
+	ch_peerTxEnable chan bool,
+	ch_msgFromNetwork <-chan c.Packet,
+	ch_msgToNetwork chan<- c.Packet) {
 
 	masterID := 0
-	globalState := u.InitGlobalState()
-	//println("LEGNTH GLOBALSTATE:", len(globalState))
+	globalState := utils.InitGlobalState()
+	println("LENGTH GLOBALSTATE:", len(globalState))
 
-	for {
-		if masterID == c.ElevatorID {
-			
-			select {
-			case order := <-ch_calculateNewOrder:
-				fmt.Println("NEW ORDER TO MASTER:", order)
+	for packet := range ch_msgFromNetwork {
+		if acceptPacket(packet, masterID) {
+			content := packet.Msg.Content
+			switch packet.Msg.MsgType {
+			case c.NEW_ORDER:
+				var order drv.ButtonEvent
+				utils.CastToType(content, &order)
 				lowestCostElevator := calculateCost(globalState, order)
-				ch_orderCalculated <- OrderMessage{Order: order, ReceiverID: lowestCostElevator}
+				packet := utils.CreatePacket(lowestCostElevator, order, c.DO_ORDER)
+				ch_msgToNetwork <- packet
+				fmt.Println("ORDER to elevator:", lowestCostElevator)
 
-			case stateMsg:= <-ch_localStateToMaster:
-				elevatorID := stateMsg.SenderID
-				globalState[elevatorID] = stateMsg.State
-				ch_updateGlobalStateDemand <- globalState
+			case c.LOCAL_STATE_CHANGED:
+				var state e.ElevatorState
+				utils.CastToType(content, &state)
+				elevatorID := packet.Msg.SenderID
+				globalState[elevatorID] = state
+				packetState := utils.CreatePacket(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
+				ch_msgToNetwork <- packetState
+
+				globalHallOrders := getGlobalHallOrders(globalState)
+				packetHall := utils.CreatePacket(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
+				ch_msgToNetwork <- packetHall
 			}
 		}
 	}
 
 }
 
+func acceptPacket(packet c.Packet, masterID int) bool {
+	//TODO: CHECKSUM
+	checksumCorrect := packet.Checksum == 0
+	return checksumCorrect && masterID == c.ElevatorID
 
-func calculateCost(GlobalState []e.ElevatorState, order driver.ButtonEvent) int {
+}
+
+func setMaster(masterID *int) {
+	//TODO: IMPLEMENT GO ROUTINE
+
+}
+
+func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent) int {
 	var lowestCostID int
 	cost := 9999
 
@@ -68,4 +77,18 @@ func calculateCost(GlobalState []e.ElevatorState, order driver.ButtonEvent) int 
 	}
 
 	return lowestCostID
+}
+
+func getGlobalHallOrders(globalState []e.ElevatorState) [][]bool {
+	buttons := e.InitElev(0).Orders
+	for _, state := range globalState {
+		for floor := 0; floor < c.N_FLOORS; floor++ {
+			for btn := 0; btn < c.N_BUTTONS-1; btn++ {
+				if state.Orders[floor][btn] == true {
+					buttons[floor][btn] = true
+				}
+			}
+		}
+	}
+	return buttons
 }
