@@ -3,7 +3,11 @@ package utils
 import (
 	"Project/config"
 	e "Project/elevator"
+	"bytes"
+	"encoding/gob"
 	"fmt"
+	"hash/crc32"
+	"log"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -30,39 +34,26 @@ func CreatePacket(receiverID int, content any, msgType config.MessageType) confi
 func CastToType(data interface{}, myStruct interface{}) {
 
 	// Use mapstructure to map the data from the map to the struct
-	config := &mapstructure.DecoderConfig{
+	conf := &mapstructure.DecoderConfig{
 		ErrorUnused: true,
 		Result:      &myStruct,
 	}
-	decoder, err := mapstructure.NewDecoder(config)
+	decoder, err := mapstructure.NewDecoder(conf)
 	if err != nil {
 		fmt.Println(err)
 	}
 	if err := decoder.Decode(data); err != nil {
 		fmt.Println(err)
 	}
-
-	//fmt.Printf("%+v\n", myStruct)
-	//fmt.Printf("t1: %T\n", myStruct)
 
 }
 
-func ConvertMapToStruct(data map[string]interface{}, myStruct interface{}) {
-
-	// Use mapstructure to map the data from the map to the struct
-	config := &mapstructure.DecoderConfig{
-		ErrorUnused: true,
-		Result:      &myStruct,
-	}
-	decoder, err := mapstructure.NewDecoder(config)
+func checksum(message any) uint32 {
+	buf := bytes.Buffer{}
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(message)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
-	if err := decoder.Decode(data); err != nil {
-		fmt.Println(err)
-	}
-
-	//fmt.Printf("%+v\n", myStruct)
-	//fmt.Printf("t1: %T\n", myStruct)
-
+	return crc32.ChecksumIEEE(buf.Bytes())
 }
