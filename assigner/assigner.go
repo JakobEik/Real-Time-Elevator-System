@@ -18,7 +18,7 @@ func MasterNode(
 
 	globalState := utils.InitGlobalState()
 	println("LENGTH GLOBAL STATE:", len(globalState))
-	var elevatorIDs []int
+	var elevatorIDsOnNetwork []int
 
 	for {
 		select {
@@ -50,8 +50,8 @@ func MasterNode(
 			}
 		case update := <-ch_peerUpdate:
 			fmt.Println("PEER UPDATE:", update.Peers)
-			elevatorIDs = stringArrToIntArr(update.Peers)
-			c.MasterID = getMaster(elevatorIDs)
+			elevatorIDsOnNetwork = stringArrayToIntArray(update.Peers)
+			c.MasterID = getMaster(elevatorIDsOnNetwork)
 			fmt.Println("MASTER ID:", c.MasterID)
 		}
 
@@ -77,13 +77,10 @@ func getMaster(elevatorIDs []int) int {
 func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent) int {
 	var lowestCostID int
 	cost := 9999
-
 	for index, localState := range GlobalState {
-
 		ElevatorCost := Cost(localState, order)
 		//println("ID:", index, ", COST:", ElevatorCost)
 		if ElevatorCost < cost {
-
 			cost = ElevatorCost
 			lowestCostID = index
 		}
@@ -106,7 +103,7 @@ func getGlobalHallOrders(globalState []e.ElevatorState) [][]bool {
 	return buttons
 }
 
-func stringArrToIntArr(strings []string) []int {
+func stringArrayToIntArray(strings []string) []int {
 	ints := make([]int, len(strings))
 	var err error
 	for i, s := range strings {
