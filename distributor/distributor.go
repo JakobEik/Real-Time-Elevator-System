@@ -10,74 +10,63 @@ import (
 )
 
 func Distributor(
-	ch_msgFromNetwork <-chan c.Packet,
-	ch_msgToNetwork chan<- c.Packet,
-// To local
+	ch_msgToDistributor <-chan c.NetworkMessage,
+	ch_msgToPack chan<- c.NetworkMessage,
+	// To local
 	ch_executeOrder chan<- drv.ButtonEvent,
 	ch_globalHallOrders chan<- [][]bool,
-//From Local
+	// From Local
 	ch_localStateUpdated <-chan e.ElevatorState,
 	ch_buttonPress <-chan drv.ButtonEvent) {
 
 	globalState := utils.InitGlobalState()
 	println(globalState)
-	masterID := 0
 
 	for {
 		select {
+		// LOCAL CHANNELS
 		case order := <-ch_buttonPress:
 			//fmt.Println("Buttonpress:", order)
 			if order.Button == drv.BT_Cab {
+				// Local state will be updated by this and sent to master => not necessary send the order to master
 				ch_executeOrder <- order
 			} else {
-				packet := utils.CreatePacket(masterID, order, c.NEW_ORDER)
-				ch_msgToNetwork <- packet
+				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
+				ch_msgToPack <- msg
 				//fmt.Println("order sent to master")
-
 			}
 
 		case state := <-ch_localStateUpdated:
-			packet := utils.CreatePacket(masterID, state, c.LOCAL_STATE_CHANGED)
-			ch_msgToNetwork <- packet
+			msg := utils.CreateMessage(c.MasterID, state, c.LOCAL_STATE_CHANGED)
+			ch_msgToPack <- msg
 
-		case packet := <-ch_msgFromNetwork:
-			if acceptPacket(packet) {
-				content := packet.Msg.Content
-				switch packet.Msg.MsgType {
-				case c.DO_ORDER:
-					var order drv.ButtonEvent
-					utils.CastToType(content, &order)
-					if packet.Msg.ReceiverID == c.ElevatorID {
-						ch_executeOrder <- order
-						fmt.Println("EXECUTE ORDER:", order)
-					}
+		// NETWORK MESSAGES
+		case msg := <-ch_msgToDistributor:
+			content := msg.Content
+			switch msg.Type {
+			case c.DO_ORDER:
+				var order drv.ButtonEvent
+				utils.DecodeContentToStruct(content, &order)
+				ch_executeOrder <- order
+				fmt.Println("EXECUTE ORDER:", order)
 
-				case c.UPDATE_GLOBAL_STATE:
-					content := packet.Msg.Content.([]interface{})
-					// Iterates through the array, converts each one to ElevatorState and updates the global state
-					for i, value := range content {
-						var state e.ElevatorState
-						utils.CastToType(value, &state)
-						globalState[i] = state
-					}
-
-				case c.GLOBAL_HALL_ORDERS:
-					var buttons [][]bool
-					utils.CastToType(content, &buttons)
-					ch_globalHallOrders <- buttons
-
+			case c.UPDATE_GLOBAL_STATE:
+				content := msg.Content.([]interface{})
+				// Iterates through the array, converts each one to ElevatorState and updates the global state
+				for i, value := range content {
+					var state e.ElevatorState
+					utils.DecodeContentToStruct(value, &state)
+					globalState[i] = state
 				}
+
+			case c.GLOBAL_HALL_ORDERS:
+				var orders [][]bool
+				utils.DecodeContentToStruct(content, &orders)
+				ch_globalHallOrders <- orders
+
 			}
+
 		}
 
 	}
-}
-
-func acceptPacket(packet c.Packet) bool {
-	//TODO: CHECKSUM
-
-	checksumCorrect := true
-	receiverID := packet.Msg.ReceiverID
-	return checksumCorrect && (receiverID == c.ElevatorID || receiverID == c.ToEveryone)
-
 }

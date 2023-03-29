@@ -18,17 +18,23 @@ func main() {
 
 	port := os.Args[1]
 	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
+	config.ElevatorStrID = os.Args[2]
 
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
 	ch_peerTxEnable := make(chan bool)
-	ch_messageToNetwork := make(chan config.Packet, bufferSize)
-	ch_messageFromNetwork := make(chan config.Packet, bufferSize)
+	ch_packetToNetwork := make(chan d.Packet, bufferSize)
+	ch_packetFromNetwork := make(chan d.Packet, bufferSize)
 
 	// channels between distributor and FSM
 	ch_localStateUpdated := make(chan e.ElevatorState, bufferSize)
 	ch_executeOrder := make(chan drv.ButtonEvent, bufferSize)
 	ch_globalHallOrders := make(chan [][]bool, bufferSize)
+
+	// Channels for Packet Distributor
+	ch_msgToPack := make(chan config.NetworkMessage, bufferSize)
+	ch_msgToAssigner := make(chan config.NetworkMessage, bufferSize)
+	ch_msgToDistributor := make(chan config.NetworkMessage, bufferSize)
 
 	// Channels for driver
 	ch_buttonPress := make(chan drv.ButtonEvent, bufferSize)
@@ -46,23 +52,31 @@ func main() {
 	go drv.PollStopButton(ch_stop)
 
 	// Networking go routines
-	go bcast.Transmitter(20321, ch_messageToNetwork)
-	go bcast.Receiver(20321, ch_messageFromNetwork)
+	go bcast.Transmitter(20321, ch_packetToNetwork)
+	go bcast.Receiver(20321, ch_packetFromNetwork)
+	go peers.Transmitter(20300, config.ElevatorStrID, ch_peerTxEnable)
 
 	go d.Distributor(
-		ch_messageFromNetwork,
-		ch_messageToNetwork,
+		ch_msgToDistributor,
+		ch_msgToPack,
 		ch_executeOrder,
 		ch_globalHallOrders,
 		ch_localStateUpdated,
 		ch_buttonPress,
 	)
 
+	go d.PacketDistributor(
+		ch_packetFromNetwork,
+		ch_packetToNetwork,
+		ch_msgToPack,
+		ch_msgToAssigner,
+		ch_msgToDistributor)
+
 	go assigner.MasterNode(
 		ch_peerUpdate,
 		ch_peerTxEnable,
-		ch_messageFromNetwork,
-		ch_messageToNetwork)
+		ch_msgToAssigner,
+		ch_msgToPack)
 
 	e.Fsm(ch_executeOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated, ch_globalHallOrders)
 }

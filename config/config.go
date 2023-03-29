@@ -11,7 +11,13 @@ const N_ELEVATORS = 3
 const DoorOpenDuration = time.Second * 3
 const ToEveryone = -1
 
-var ElevatorID = 0
+const NumOfRetries = 5
+const ConfirmationWaitDuration = time.Millisecond * 10
+
+var ElevatorID int
+var ElevatorStrID string
+var MasterID int
+var MasterStrID string
 
 type Behavior int
 
@@ -49,12 +55,6 @@ const (
 type NetworkMessage struct {
 	SenderID   int
 	ReceiverID int
-	MasterID   int
-	MsgType    MessageType
+	Type       MessageType
 	Content    any
-}
-
-type Packet struct {
-	Msg      NetworkMessage
-	Checksum int
 }
