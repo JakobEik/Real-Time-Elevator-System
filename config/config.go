@@ -15,9 +15,7 @@ const NumOfRetries = 5
 const ConfirmationWaitDuration = time.Millisecond * 10
 
 var ElevatorID int
-var ElevatorStrID string
-var MasterID int
-var MasterStrID string
+var MasterID = 0
 
 type Behavior int
 

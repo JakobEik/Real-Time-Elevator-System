@@ -18,7 +18,7 @@ func main() {
 
 	port := os.Args[1]
 	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
-	config.ElevatorStrID = os.Args[2]
+	ElevatorStrID := os.Args[2]
 
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
@@ -54,7 +54,8 @@ func main() {
 	// Networking go routines
 	go bcast.Transmitter(20321, ch_packetToNetwork)
 	go bcast.Receiver(20321, ch_packetFromNetwork)
-	go peers.Transmitter(20300, config.ElevatorStrID, ch_peerTxEnable)
+	go peers.Transmitter(20300, ElevatorStrID, ch_peerTxEnable)
+	go peers.Receiver(20300, ch_peerUpdate)
 
 	go d.Distributor(
 		ch_msgToDistributor,
@@ -74,7 +75,6 @@ func main() {
 
 	go assigner.MasterNode(
 		ch_peerUpdate,
-		ch_peerTxEnable,
 		ch_msgToAssigner,
 		ch_msgToPack)
 

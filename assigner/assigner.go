@@ -22,13 +22,15 @@ func MasterNode(
 
 	for {
 		select {
+		// MASTER
 		case msg := <-ch_msgToAssigner:
-			if c.ElevatorID != c.MasterID {
-				continue
-			}
 			content := msg.Content
 			switch msg.Type {
 			case c.NEW_ORDER:
+				if c.ElevatorID != c.MasterID {
+					continue
+				}
+
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
 				lowestCostElevator := calculateCost(globalState, order)
@@ -41,22 +43,53 @@ func MasterNode(
 				utils.DecodeContentToStruct(content, &state)
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
-				packetState := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
-				ch_msgToPack <- packetState
+
+				if c.ElevatorID != c.MasterID {
+					continue
+				}
+
+				packet := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
+				ch_msgToPack <- packet
 
 				globalHallOrders := getGlobalHallOrders(globalState)
-				packetHall := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
-				ch_msgToPack <- packetHall
+				packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
+				ch_msgToPack <- packet2
 			}
+
+		// SLAVE
 		case update := <-ch_peerUpdate:
-			fmt.Println("PEER UPDATE:", update.Peers)
+			fmt.Println("PEER UPDATE:", update)
+			// Assign new master
 			elevatorIDsOnNetwork = stringArrayToIntArray(update.Peers)
 			c.MasterID = getMaster(elevatorIDsOnNetwork)
 			fmt.Println("MASTER ID:", c.MasterID)
+
+			// Distribute orders from lost peers if there are any
+			if c.ElevatorID == c.MasterID && len(update.Lost) > 0 {
+				lostPeers := stringArrayToIntArray(update.Lost)
+				for _, elevatorID := range lostPeers {
+					distributeOrders(globalState[elevatorID], ch_msgToPack)
+				}
+			}
+
 		}
 
 	}
 
+}
+
+// distributeOrders sends every order from the given elevator to the master of the system
+func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) {
+	orders := elevator.Orders
+	for floor := range orders {
+		for btn := 0; btn < c.N_BUTTONS-1; btn++ {
+			if orders[floor][btn] == true {
+				order := drv.ButtonEvent{Floor: floor, Button: drv.ButtonType(btn)}
+				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
+				ch_msgToPack <- msg
+			}
+		}
+	}
 }
 
 // getMaster returns the elevator with the lowest ID
