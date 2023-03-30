@@ -20,6 +20,8 @@ func MasterNode(
 	println("LENGTH GLOBAL STATE:", len(globalState))
 	var elevatorIDsOnNetwork []int
 
+	ch_distributeLostOrders := make(chan []string, 10)
+
 	for {
 		select {
 		// MASTER
@@ -34,7 +36,7 @@ func MasterNode(
 
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
-				lowestCostElevator := calculateCost(globalState, order)
+				lowestCostElevator := calculateCost(globalState, order, elevatorIDsOnNetwork)
 				packet := utils.CreateMessage(lowestCostElevator, order, c.DO_ORDER)
 				ch_msgToPack <- packet
 				fmt.Println("ORDER to elevator:", lowestCostElevator)
@@ -44,7 +46,7 @@ func MasterNode(
 				utils.DecodeContentToStruct(content, &state)
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
-
+				e.PrintGlobalState(globalState)
 				if c.ElevatorID != c.MasterID {
 					continue
 				}
@@ -55,6 +57,20 @@ func MasterNode(
 				globalHallOrders := getGlobalHallOrders(globalState)
 				packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
 				ch_msgToPack <- packet2
+
+			case c.UPDATE_GLOBAL_STATE:
+				if c.ElevatorID == c.MasterID {
+					continue
+				}
+				content := msg.Content.([]interface{})
+				// Iterates through the array, converts each one to ElevatorState and updates the global state
+				for i, value := range content {
+					var state e.ElevatorState
+					utils.DecodeContentToStruct(value, &state)
+					globalState[i] = state
+				}
+				e.PrintGlobalState(globalState)
+
 			}
 
 		// SLAVE
@@ -66,9 +82,18 @@ func MasterNode(
 			fmt.Println("MASTER ID:", c.MasterID)
 
 			// Distribute orders from lost peers if there are any
-			if c.ElevatorID == c.MasterID && len(update.Lost) > 0 {
-				lostPeers := stringArrayToIntArray(update.Lost)
-				for _, elevatorID := range lostPeers {
+			fmt.Println("LENGTH:", len(update.Lost), "lost:", update.Lost)
+			println(len(update.Lost) > 0)
+			if len(update.Lost) > 0 {
+				ch_distributeLostOrders <- update.Lost
+			}
+
+		case lostPeers := <-ch_distributeLostOrders:
+			if c.ElevatorID == c.MasterID {
+				println("MASTER WILL DISTRIBUTE")
+				IDs := stringArrayToIntArray(lostPeers)
+				for _, elevatorID := range IDs {
+					println("Distribute for:", elevatorID)
 					distributeOrders(globalState[elevatorID], ch_msgToPack)
 				}
 			}
@@ -82,11 +107,14 @@ func MasterNode(
 // distributeOrders sends every order from the given elevator to the master of the system
 func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) {
 	orders := elevator.Orders
+	println("DISTRIBUTE THIS ELEVATOR")
+	e.PrintState(elevator)
 	for floor := range orders {
 		for btn := 0; btn < c.N_BUTTONS-1; btn++ {
 			if orders[floor][btn] == true {
 				order := drv.ButtonEvent{Floor: floor, Button: drv.ButtonType(btn)}
 				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
+				fmt.Println("DISTRIBUTE ORDER:", order)
 				ch_msgToPack <- msg
 			}
 		}
@@ -108,15 +136,16 @@ func getMaster(elevatorIDs []int) int {
 
 }
 
-func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent) int {
+func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
 	var lowestCostID int
 	cost := 9999
-	for index, localState := range GlobalState {
-		ElevatorCost := Cost(localState, order)
+	for _, elevID := range elevatorIDs {
+
+		ElevatorCost := Cost(GlobalState[elevID], order)
 		//println("ID:", index, ", COST:", ElevatorCost)
 		if ElevatorCost < cost {
 			cost = ElevatorCost
-			lowestCostID = index
+			lowestCostID = elevID
 		}
 	}
 

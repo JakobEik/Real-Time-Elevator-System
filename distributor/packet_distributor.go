@@ -36,17 +36,16 @@ func PacketDistributor(
 				// TO ASSIGNER
 				case c.LOCAL_STATE_CHANGED:
 					fallthrough
+				case c.UPDATE_GLOBAL_STATE:
+					fallthrough
 				case c.NEW_ORDER:
-					if c.MasterID == c.ElevatorID {
-						ch_msgToAssigner <- packet.Msg
-						ch_packetToNetwork <- confirmMessage(packet)
-					}
+					ch_msgToAssigner <- packet.Msg
+					ch_packetToNetwork <- confirmMessage(packet)
+
 				// TO DISTRIBUTOR
 				case c.DO_ORDER:
 					fallthrough
 				case c.GLOBAL_HALL_ORDERS:
-					fallthrough
-				case c.UPDATE_GLOBAL_STATE:
 					ch_msgToDistributor <- packet.Msg
 					ch_packetToNetwork <- confirmMessage(packet)
 

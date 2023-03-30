@@ -167,7 +167,7 @@ func nextOrder(e *ElevatorState) {
 }
 
 func PrintState(elev ElevatorState) {
-	println("   UP  DOWN  CAB")
+	println("  UP   DOWN  CAB")
 	fmt.Println(elev.Orders[3])
 	fmt.Println(elev.Orders[2])
 	fmt.Println(elev.Orders[1])
@@ -175,4 +175,17 @@ func PrintState(elev ElevatorState) {
 	println()
 	//println("Direction: ", elev.direction, ", behavior: ", elev.behavior, " Floor: ", elev.floor)
 	println()
+}
+
+func PrintGlobalState(elevs []ElevatorState) {
+	for i, elev := range elevs {
+		print("  UP   DOWN  CAB")
+		println("ELEVATOR:", i)
+		fmt.Println(elev.Orders[3])
+		fmt.Println(elev.Orders[2])
+		fmt.Println(elev.Orders[1])
+		fmt.Println(elev.Orders[0])
+	}
+	println()
+
 }
