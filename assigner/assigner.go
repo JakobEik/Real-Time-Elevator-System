@@ -143,7 +143,7 @@ func stringArrayToIntArray(strings []string) []int {
 		ints[i], err = strconv.Atoi(s)
 		if err != nil {
 			fmt.Println("Error:", err)
-			return nil
+			panic(err)
 		}
 	}
 	return ints

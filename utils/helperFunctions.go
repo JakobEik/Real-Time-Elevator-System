@@ -36,10 +36,10 @@ func DecodeContentToStruct(data interface{}, correctStruct interface{}) {
 	}
 	decoder, err := mapstructure.NewDecoder(conf)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("DECODE TO STRUCT ERROR:", err)
 	}
 	if err := decoder.Decode(data); err != nil {
-		fmt.Println(err)
+		fmt.Println("DECODE TO STRUCT ERROR:", err)
 	}
 
 }

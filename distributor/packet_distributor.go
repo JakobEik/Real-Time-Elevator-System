@@ -2,6 +2,8 @@ package distributor
 
 import (
 	c "Project/config"
+	"Project/driver"
+	"Project/elevator"
 	"Project/utils"
 	"bytes"
 	"encoding/gob"
@@ -29,13 +31,15 @@ func PacketDistributor(
 	ch_msgToPack <-chan c.NetworkMessage,
 	ch_msgToAssigner, ch_msgToDistributor chan<- c.NetworkMessage) {
 
-	var sequenceNumber uint32 = 0
+	initGob()
 
+	var sequenceNumber uint32 = 0
 	ch_msgReceived := make(chan uint32, 512)
 
 	for {
 		select {
 		case packet := <-ch_packetFromNetwork:
+			fmt.Println("RECEIVE:", packet)
 			if acceptPacket(packet) {
 				switch packet.msg.Type {
 				// TO ASSIGNER
@@ -74,7 +78,7 @@ func PacketDistributor(
 
 func sendPacketUntilConfirmation(ch_packetToNetwork chan<- Packet, ch_msgReceived <-chan uint32, packet Packet) {
 	ticker := time.NewTicker(c.ConfirmationWaitDuration)
-
+	fmt.Println("SEND:", packet)
 	// stop the ticker when the function returns
 	defer ticker.Stop()
 	count := 0
@@ -121,6 +125,9 @@ func incrementWithOverflow(number uint32) uint32 {
 
 func acceptPacket(packet Packet) bool {
 	checksumCorrect := packet.checksum == checksum(packet.msg)
+	//if !checksumCorrect {
+	//	println("WRONG CHECKSUM! Calculated:", checksum(packet.msg), ", received:", packet.checksum)
+	//}
 	receiverID := packet.msg.ReceiverID
 	return checksumCorrect && (receiverID == c.ElevatorID || receiverID == c.ToEveryone)
 
@@ -141,7 +148,12 @@ func checksum(message any) uint32 {
 	enc := gob.NewEncoder(&buf)
 	err := enc.Encode(message)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("CHECKSUM ERROR:", err)
 	}
 	return crc32.ChecksumIEEE(buf.Bytes())
+}
+
+func initGob() {
+	gob.Register(elevator.ElevatorState{})
+	gob.Register(driver.ButtonEvent{})
 }
