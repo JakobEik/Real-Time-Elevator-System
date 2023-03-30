@@ -18,9 +18,10 @@ func MasterNode(
 
 	globalState := utils.InitGlobalState()
 	println("LENGTH GLOBAL STATE:", len(globalState))
-	var elevatorIDsOnNetwork []int
+	var elevatorIDsOnline []int
 
-	ch_distributeLostOrders := make(chan []string, 10)
+	ch_distributeLostOrders := make(chan []string, 16)
+	ch_updateNewPeers := make(chan []string, 16)
 
 	for {
 		select {
@@ -36,7 +37,7 @@ func MasterNode(
 
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
-				lowestCostElevator := calculateCost(globalState, order, elevatorIDsOnNetwork)
+				lowestCostElevator := calculateCost(globalState, order, elevatorIDsOnline)
 				packet := utils.CreateMessage(lowestCostElevator, order, c.DO_ORDER)
 				ch_msgToPack <- packet
 				fmt.Println("ORDER to elevator:", lowestCostElevator)
@@ -54,7 +55,7 @@ func MasterNode(
 				packet := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
 				ch_msgToPack <- packet
 
-				globalHallOrders := getGlobalHallOrders(globalState)
+				globalHallOrders := getGlobalHallOrders(globalState, elevatorIDsOnline)
 				packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
 				ch_msgToPack <- packet2
 
@@ -77,24 +78,35 @@ func MasterNode(
 		case update := <-ch_peerUpdate:
 			fmt.Println("PEER UPDATE:", update)
 			// Assign new master
-			elevatorIDsOnNetwork = stringArrayToIntArray(update.Peers)
-			c.MasterID = getMaster(elevatorIDsOnNetwork)
-			fmt.Println("MASTER ID:", c.MasterID)
+			elevatorIDsOnline = stringArrayToIntArray(update.Peers)
+			c.MasterID = getMaster(elevatorIDsOnline)
 
 			// Distribute orders from lost peers if there are any
-			fmt.Println("LENGTH:", len(update.Lost), "lost:", update.Lost)
 			println(len(update.Lost) > 0)
 			if len(update.Lost) > 0 {
 				ch_distributeLostOrders <- update.Lost
 			}
 
+			if len(update.New) > 0 {
+
+			}
+
 		case lostPeers := <-ch_distributeLostOrders:
 			if c.ElevatorID == c.MasterID {
-				println("MASTER WILL DISTRIBUTE")
 				IDs := stringArrayToIntArray(lostPeers)
 				for _, elevatorID := range IDs {
-					println("Distribute for:", elevatorID)
 					distributeOrders(globalState[elevatorID], ch_msgToPack)
+				}
+			}
+		case newPeers := <-ch_updateNewPeers:
+			if c.ElevatorID == c.MasterID {
+				IDs := stringArrayToIntArray(newPeers)
+				for _, elevatorID := range IDs {
+					stateUpdate := utils.CreateMessage(elevatorID, globalState, c.UPDATE_GLOBAL_STATE)
+					ch_msgToPack <- stateUpdate
+					hallOrders := getGlobalHallOrders(globalState, elevatorIDsOnline)
+					hallOrdersUpdate := utils.CreateMessage(elevatorID, hallOrders, c.GLOBAL_HALL_ORDERS)
+					ch_msgToPack <- hallOrdersUpdate
 				}
 			}
 
@@ -152,12 +164,12 @@ func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevato
 	return lowestCostID
 }
 
-func getGlobalHallOrders(globalState []e.ElevatorState) [][]bool {
+func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
 	buttons := e.InitElev(0).Orders
-	for _, state := range globalState {
+	for _, ID := range onlineElevs {
 		for floor := 0; floor < c.N_FLOORS; floor++ {
 			for btn := 0; btn < c.N_BUTTONS-1; btn++ {
-				if state.Orders[floor][btn] == true {
+				if globalState[ID].Orders[floor][btn] == true {
 					buttons[floor][btn] = true
 				}
 			}
