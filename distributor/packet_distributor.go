@@ -78,7 +78,7 @@ func PacketDistributor(
 
 func sendPacketUntilConfirmation(ch_packetToNetwork chan<- Packet, ch_msgReceived <-chan uint32, packet Packet) {
 	ticker := time.NewTicker(c.ConfirmationWaitDuration)
-	fmt.Println("SEND:", packet)
+
 	// stop the ticker when the function returns
 	defer ticker.Stop()
 	count := 0
@@ -87,6 +87,7 @@ func sendPacketUntilConfirmation(ch_packetToNetwork chan<- Packet, ch_msgReceive
 		case <-ticker.C:
 			if count < c.NumOfRetries {
 				ch_packetToNetwork <- packet
+				fmt.Println("SEND:", packet)
 				count++
 			} else {
 				fmt.Println("PACKET FAILED TO RECEIVE CONFIRMATION")
