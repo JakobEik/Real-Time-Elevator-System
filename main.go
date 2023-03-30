@@ -54,8 +54,8 @@ func main() {
 	// Networking go routines
 	go bcast.Transmitter(20321, ch_packetToNetwork)
 	go bcast.Receiver(20321, ch_packetFromNetwork)
-	go peers.Transmitter(20300, ElevatorStrID, ch_peerTxEnable)
-	go peers.Receiver(20300, ch_peerUpdate)
+	go peers.Transmitter(20123, ElevatorStrID, ch_peerTxEnable)
+	go peers.Receiver(20123, ch_peerUpdate)
 
 	go d.Distributor(
 		ch_msgToDistributor,

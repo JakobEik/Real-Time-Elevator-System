@@ -4,6 +4,7 @@ import (
 	"Project/network/conn"
 	"encoding/json"
 	"fmt"
+	"hash/crc32"
 	"net"
 	"reflect"
 )
@@ -29,8 +30,9 @@ func Transmitter(port int, chans ...interface{}) {
 		chosen, value, _ := reflect.Select(selectCases)
 		jsonstr, _ := json.Marshal(value.Interface())
 		ttj, _ := json.Marshal(typeTaggedJSON{
-			TypeId: typeNames[chosen],
-			JSON:   jsonstr,
+			TypeId:   typeNames[chosen],
+			JSON:     jsonstr,
+			CheckSum: crc32.ChecksumIEEE(jsonstr),
 		})
 		if len(ttj) > bufSize {
 			panic(fmt.Sprintf(
@@ -40,14 +42,13 @@ func Transmitter(port int, chans ...interface{}) {
 		}
 		conn.WriteTo(ttj, addr)
 
-
 	}
 }
 
 // Matches type-tagged JSON received on `port` to element types of `chans`, then
 // sends the decoded value on the corresponding channel
 func Receiver(port int, chans ...interface{}) {
-	
+
 	checkArgs(chans...)
 	chansMap := make(map[string]interface{})
 	for _, ch := range chans {
@@ -61,13 +62,16 @@ func Receiver(port int, chans ...interface{}) {
 		if e != nil {
 			fmt.Printf("bcast.Receiver(%d, ...):ReadFrom() failed: \"%+v\"\n", port, e)
 		}
-
 		var ttj typeTaggedJSON
 		json.Unmarshal(buf[0:n], &ttj)
 		ch, ok := chansMap[ttj.TypeId]
-		if !ok {
+
+		checksum := crc32.ChecksumIEEE(ttj.JSON)
+		if !ok || checksum != ttj.CheckSum {
+			fmt.Println("Checksum mismatch! Sent:", ttj.CheckSum, ", calculated:", checksum)
 			continue
 		}
+
 		v := reflect.New(reflect.TypeOf(ch).Elem())
 		json.Unmarshal(ttj.JSON, v.Interface())
 		reflect.Select([]reflect.SelectCase{{
@@ -75,12 +79,14 @@ func Receiver(port int, chans ...interface{}) {
 			Chan: reflect.ValueOf(ch),
 			Send: reflect.Indirect(v),
 		}})
+
 	}
 }
 
 type typeTaggedJSON struct {
-	TypeId string
-	JSON   []byte
+	TypeId   string
+	JSON     []byte
+	CheckSum uint32
 }
 
 // Checks that args to Tx'er/Rx'er are valid:

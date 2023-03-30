@@ -24,6 +24,7 @@ func MasterNode(
 		select {
 		// MASTER
 		case msg := <-ch_msgToAssigner:
+			//fmt.Println("MASTER RECEIVE:", msg.Type)
 			content := msg.Content
 			switch msg.Type {
 			case c.NEW_ORDER:

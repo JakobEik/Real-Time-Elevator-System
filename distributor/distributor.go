@@ -42,6 +42,7 @@ func Distributor(
 
 		// NETWORK MESSAGES
 		case msg := <-ch_msgToDistributor:
+			//fmt.Println("DISTRIBUTOR RECEIVE:", msg.Type)
 			content := msg.Content
 			switch msg.Type {
 			case c.DO_ORDER:

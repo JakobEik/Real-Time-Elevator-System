@@ -33,6 +33,7 @@ func Fsm(
 				//println("execute")
 				onNewOrderEvent(order, &elev, doorTimer)
 			}
+			ch_newLocalState <- elev
 
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
@@ -49,16 +50,19 @@ func Fsm(
 				//println("set door timer")
 
 			}
+			ch_newLocalState <- elev
 
 		case <-ch_stop:
 			//println("STOP")
 			clearAllFloors(&elev)
 			firstFloor := drv.ButtonEvent{Floor: 0, Button: drv.BT_Cab}
 			onNewOrderEvent(firstFloor, &elev, doorTimer)
+			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
 			obstruct = obstruction
 			onObstructionEvent(obstruction, elev, doorTimer)
+			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
 			//println("DOOR CLOSE")
@@ -68,11 +72,12 @@ func Fsm(
 			if !ordersIsEmpty(&elev) {
 				nextOrder(&elev)
 			}
+
 		case hallOrders := <-ch_globalHallOrders:
 			setHallLights(hallOrders)
 		}
 		//PrintState(elev)
-		ch_newLocalState <- elev
+
 		setCabLights(elev.Orders)
 
 	}

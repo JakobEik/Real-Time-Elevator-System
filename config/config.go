@@ -31,7 +31,7 @@ func (b Behavior) String() string {
 	case IDLE:
 		return "IDLE"
 	case DOOR_OPEN:
-		return "Door open"
+		return "DOOR_OPEN"
 	case MOVING:
 		return "MOVING"
 	default:
@@ -49,6 +49,25 @@ const (
 	LOCAL_STATE_CHANGED
 	GLOBAL_HALL_ORDERS
 )
+
+func (t MessageType) String() string {
+	switch t {
+	case NEW_ORDER:
+		return "NEW_ORDER"
+	case DO_ORDER:
+		return "DO_ORDER"
+	case UPDATE_GLOBAL_STATE:
+		return "UPDATE_GLOBAL_STATE"
+	case MSG_RECEIVED:
+		return "MSG_RECEIVED"
+	case LOCAL_STATE_CHANGED:
+		return "LOCAL_STATE_CHANGED"
+	case GLOBAL_HALL_ORDERS:
+		return "GLOBAL_HALL_ORDERS"
+	default:
+		return fmt.Sprintf("%d", int(t))
+	}
+}
 
 type NetworkMessage struct {
 	SenderID   int

@@ -2,21 +2,14 @@ package distributor
 
 import (
 	c "Project/config"
-	"Project/driver"
-	"Project/elevator"
 	"Project/utils"
-	"bytes"
-	"encoding/gob"
-	"fmt"
-	"hash/crc32"
-	"log"
 	"time"
 )
 
+// Fields need to be exported so network module can use them
 type Packet struct {
-	msg            c.NetworkMessage
-	sequenceNumber uint32
-	checksum       uint32
+	Msg            c.NetworkMessage
+	SequenceNumber uint32
 }
 
 // PacketDistributor distributes all messages from local to the network, and continue to send if no confirmation has
@@ -31,23 +24,21 @@ func PacketDistributor(
 	ch_msgToPack <-chan c.NetworkMessage,
 	ch_msgToAssigner, ch_msgToDistributor chan<- c.NetworkMessage) {
 
-	initGob()
-
 	var sequenceNumber uint32 = 0
 	ch_msgReceived := make(chan uint32, 512)
 
 	for {
 		select {
 		case packet := <-ch_packetFromNetwork:
-			fmt.Println("RECEIVE:", packet)
+			//fmt.Println("RECEIVE:", packet.Msg.Type)
 			if acceptPacket(packet) {
-				switch packet.msg.Type {
+				switch packet.Msg.Type {
 				// TO ASSIGNER
 				case c.LOCAL_STATE_CHANGED:
 					fallthrough
 				case c.NEW_ORDER:
 					if c.MasterID == c.ElevatorID {
-						ch_msgToAssigner <- packet.msg
+						ch_msgToAssigner <- packet.Msg
 						ch_packetToNetwork <- confirmMessage(packet)
 					}
 				// TO DISTRIBUTOR
@@ -56,11 +47,11 @@ func PacketDistributor(
 				case c.GLOBAL_HALL_ORDERS:
 					fallthrough
 				case c.UPDATE_GLOBAL_STATE:
-					ch_msgToDistributor <- packet.msg
+					ch_msgToDistributor <- packet.Msg
 					ch_packetToNetwork <- confirmMessage(packet)
 
 				case c.MSG_RECEIVED:
-					ch_msgReceived <- packet.sequenceNumber
+					ch_msgReceived <- packet.SequenceNumber
 
 				}
 			}
@@ -87,15 +78,15 @@ func sendPacketUntilConfirmation(ch_packetToNetwork chan<- Packet, ch_msgReceive
 		case <-ticker.C:
 			if count < c.NumOfRetries {
 				ch_packetToNetwork <- packet
-				fmt.Println("SEND:", packet)
+				//fmt.Println("SEND:", packet.Msg.Type)
 				count++
 			} else {
-				fmt.Println("PACKET FAILED TO RECEIVE CONFIRMATION")
+				//fmt.Println("PACKET FAILED TO RECEIVE CONFIRMATION")
 				return
 			}
 
 		case seqNum := <-ch_msgReceived:
-			if seqNum == packet.sequenceNumber {
+			if seqNum == packet.SequenceNumber {
 				return
 			}
 		}
@@ -125,36 +116,18 @@ func incrementWithOverflow(number uint32) uint32 {
 }
 
 func acceptPacket(packet Packet) bool {
-	checksumCorrect := packet.checksum == checksum(packet.msg)
-	//if !checksumCorrect {
-	//	println("WRONG CHECKSUM! Calculated:", checksum(packet.msg), ", received:", packet.checksum)
-	//}
-	receiverID := packet.msg.ReceiverID
-	return checksumCorrect && (receiverID == c.ElevatorID || receiverID == c.ToEveryone)
+	receiverID := packet.Msg.ReceiverID
+	return receiverID == c.ElevatorID || receiverID == c.ToEveryone
 
 }
 
 func pack(message c.NetworkMessage, seqNum uint32) Packet {
-	return Packet{msg: message, sequenceNumber: seqNum, checksum: checksum(message)}
+	packet := Packet{Msg: message, SequenceNumber: seqNum}
+	return packet
 }
 
 func confirmMessage(packetReceived Packet) Packet {
-	receiverID := packetReceived.msg.SenderID
+	receiverID := packetReceived.Msg.SenderID
 	msg := utils.CreateMessage(receiverID, true, c.MSG_RECEIVED)
-	return pack(msg, packetReceived.sequenceNumber)
-}
-
-func checksum(message any) uint32 {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(message)
-	if err != nil {
-		log.Fatal("CHECKSUM ERROR:", err)
-	}
-	return crc32.ChecksumIEEE(buf.Bytes())
-}
-
-func initGob() {
-	gob.Register(elevator.ElevatorState{})
-	gob.Register(driver.ButtonEvent{})
+	return pack(msg, packetReceived.SequenceNumber)
 }
