@@ -17,7 +17,7 @@ func Fsm(
 	ch_peerTxEnable chan<- bool) {
 
 	doorTimer := time.NewTimer(1)
-	watchdogTimer := time.NewTimer(1)
+	doorTimer.Stop()
 
 	elev := InitElev(c.N_FLOORS - 1)
 	clearAllFloors(&elev)
@@ -25,15 +25,12 @@ func Fsm(
 
 	for {
 		select {
-		case <-watchdogTimer.C:
-			//panic("ELEVATOR OUT OF SERVICE")
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
 
 		case floor := <-ch_floorArrival:
-			watchdogTimer.Stop()
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
@@ -45,8 +42,6 @@ func Fsm(
 				drv.SetDoorOpenLamp(true)
 				doorTimer.Reset(c.DoorOpenDuration)
 				//println("set door timer")
-			} else {
-				watchdogTimer.Reset(c.WatchdogTimerDuration)
 			}
 			ch_newLocalState <- elev
 
@@ -61,9 +56,10 @@ func Fsm(
 			if obstruction && elev.Behavior == c.DOOR_OPEN {
 				doorTimer.Stop()
 				ch_peerTxEnable <- false
+				time.Sleep(time.Millisecond * 50)
+				clearAllFloors(&elev)
 			} else {
 				doorTimer.Reset(c.DoorOpenDuration)
-				clearAllFloors(&elev)
 				ch_peerTxEnable <- true
 			}
 			ch_newLocalState <- elev
@@ -72,6 +68,7 @@ func Fsm(
 			println("DOOR CLOSE")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
+			// Next Order
 			elev.Direction, elev.Behavior = chooseElevDirection(elev)
 			drv.SetMotorDirection(elev.Direction)
 			if elev.Behavior == c.DOOR_OPEN {

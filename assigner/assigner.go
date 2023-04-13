@@ -153,10 +153,9 @@ func getMaster(elevatorIDs []int) int {
 func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
 	var lowestCostID int
 	cost := 9999
-	for _, elevID := range elevatorIDs {
-
+	for index, elevID := range elevatorIDs {
 		ElevatorCost := Cost(GlobalState[elevID], order)
-		//println("ID:", index, ", COST:", ElevatorCost)
+		println("ID:", index, ", COST:", ElevatorCost)
 		if ElevatorCost < cost {
 			cost = ElevatorCost
 			lowestCostID = elevID
