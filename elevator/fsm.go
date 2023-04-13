@@ -65,8 +65,9 @@ func Fsm(
 			elev.Direction = direction
 			elev.Behavior = behavior
 			drv.SetMotorDirection(direction)
-			// In case there is another order on the same floor when it closes
 			if behavior == c.DOOR_OPEN {
+				// If there is another hall order at his floor in a different direction but there are no other orders
+				// for this elevator, this will open the door again and clear the order
 				ch_floorArrival <- elev.Floor
 			}
 
