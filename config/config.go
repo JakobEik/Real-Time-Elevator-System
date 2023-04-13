@@ -13,6 +13,7 @@ const ToEveryone = -1
 
 const NumOfRetries = 10
 const ConfirmationWaitDuration = time.Millisecond * 40
+const WatchdogTimerDuration = 5
 
 var ElevatorID int
 var MasterID = 0

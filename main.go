@@ -8,6 +8,7 @@ import (
 	e "Project/elevator"
 	"Project/network/bcast"
 	"Project/network/peers"
+	"Project/watchdog"
 	"os"
 	"strconv"
 )
@@ -42,6 +43,10 @@ func main() {
 	ch_obstruction := make(chan bool, bufferSize)
 	ch_stop := make(chan bool)
 
+	// Channels for watchdog
+	ch_watchdogAlive := make(chan bool, bufferSize)
+	ch_watchdogDead := make(chan bool, bufferSize)
+
 	//drv.Init("localhost:15657", config.N_FLOORS)
 	drv.Init("localhost:"+port, config.N_FLOORS)
 
@@ -56,6 +61,9 @@ func main() {
 	go bcast.Receiver(20321, ch_packetFromNetwork)
 	go peers.Transmitter(20123, ElevatorStrID, ch_peerTxEnable)
 	go peers.Receiver(20123, ch_peerUpdate)
+
+	// Watchdog go routine
+	go watchdog.Watchdog(config.WatchdogTimerDuration, ch_watchdogAlive, ch_watchdogDead)
 
 	go d.Distributor(
 		ch_msgToDistributor,
