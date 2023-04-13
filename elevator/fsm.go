@@ -138,19 +138,19 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 }
 
 func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer) {
-	if obstruction && e.Behavior == c.IDLE {
+	if obstruction && e.Behavior == c.DOOR_OPEN {
 		//println("OBSTRUCT")
 		doorTimer.Stop()
-		e.Behavior = c.UNAVAILABLE
-		<-doorTimer.C
+		//e.Behavior = c.UNAVAILABLE
 	} else {
 		//println("OBSTR OFF")
-		switch e.Behavior {
+		doorTimer.Reset(c.DoorOpenDuration)
+		/*switch e.Behavior {
 
 		case c.DOOR_OPEN:
 			//println("RESET")
 			doorTimer.Reset(c.DoorOpenDuration)
-		}
+		}*/
 	}
 
 }
