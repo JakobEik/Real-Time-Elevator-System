@@ -17,20 +17,23 @@ func Fsm(
 	ch_peerTxEnable chan<- bool) {
 
 	doorTimer := time.NewTimer(1)
-	<-doorTimer.C
-	//obstruct := false
+	watchdogTimer := time.NewTimer(1)
 
 	elev := InitElev(c.N_FLOORS - 1)
 	clearAllFloors(&elev)
 	drv.SetMotorDirection(drv.MD_Down)
+
 	for {
 		select {
+		case <-watchdogTimer.C:
+			//panic("ELEVATOR OUT OF SERVICE")
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
 
 		case floor := <-ch_floorArrival:
+			watchdogTimer.Stop()
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
@@ -42,7 +45,8 @@ func Fsm(
 				drv.SetDoorOpenLamp(true)
 				doorTimer.Reset(c.DoorOpenDuration)
 				//println("set door timer")
-
+			} else {
+				watchdogTimer.Reset(c.WatchdogTimerDuration)
 			}
 			ch_newLocalState <- elev
 
@@ -54,18 +58,23 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
-			onObstructionEvent(obstruction, &elev, doorTimer, ch_peerTxEnable)
+			if obstruction && elev.Behavior == c.DOOR_OPEN {
+				doorTimer.Stop()
+				ch_peerTxEnable <- false
+			} else {
+				doorTimer.Reset(c.DoorOpenDuration)
+				clearAllFloors(&elev)
+				ch_peerTxEnable <- true
+			}
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
 			println("DOOR CLOSE")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
-			direction, behavior := chooseElevDirection(elev)
-			elev.Direction = direction
-			elev.Behavior = behavior
-			drv.SetMotorDirection(direction)
-			if behavior == c.DOOR_OPEN {
+			elev.Direction, elev.Behavior = chooseElevDirection(elev)
+			drv.SetMotorDirection(elev.Direction)
+			if elev.Behavior == c.DOOR_OPEN {
 				// If there is another hall order at his floor in a different direction but there are no other orders
 				// for this elevator, this will open the door again and clear the order
 				ch_floorArrival <- elev.Floor
@@ -120,10 +129,8 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 			return
 		}
 		e.Orders[floor][btn_type] = true
-		direction, behavior := chooseElevDirection(*e)
-		e.Direction = direction
-		e.Behavior = behavior
-		switch behavior {
+		e.Direction, e.Behavior = chooseElevDirection(*e)
+		switch e.Behavior {
 		case c.DOOR_OPEN:
 			drv.SetDoorOpenLamp(true)
 			doorTimer.Reset(c.DoorOpenDuration)
@@ -132,18 +139,6 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		case c.MOVING:
 			drv.SetMotorDirection(e.Direction)
 		}
-	}
-
-}
-
-func onObstructionEvent(obstruction bool, e *ElevatorState, doorTimer *time.Timer, ch_peerTxEnable chan<- bool) {
-	if obstruction && e.Behavior == c.DOOR_OPEN {
-		doorTimer.Stop()
-		ch_peerTxEnable <- false
-	} else {
-		doorTimer.Reset(c.DoorOpenDuration)
-		clearAllFloors(e)
-		ch_peerTxEnable <- true
 	}
 
 }

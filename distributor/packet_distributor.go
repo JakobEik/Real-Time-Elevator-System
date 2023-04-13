@@ -14,7 +14,7 @@ type Packet struct {
 }
 
 // Used for resending packets that havent been acknowledged
-type packetWithAttempts struct {
+type packetWithResendAttempts struct {
 	packet   Packet
 	attempts uint8
 }
@@ -32,7 +32,7 @@ func PacketDistributor(
 
 	var sequenceNumber uint32 = 0
 	resendPacketsTicker := time.NewTicker(c.ConfirmationWaitDuration)
-	packetsToAcknowledge := make(map[uint32]packetWithAttempts, 512) // map[seqNum]
+	packetsToBeConfirmed := make(map[uint32]packetWithResendAttempts, 512) // map[seqNum]
 
 	for {
 		select {
@@ -57,26 +57,27 @@ func PacketDistributor(
 					ch_packetToNetwork <- confirmMessage(packet)
 
 				case c.MSG_RECEIVED:
-					delete(packetsToAcknowledge, packet.SequenceNumber)
+					delete(packetsToBeConfirmed, packet.SequenceNumber)
 				}
 			}
 
 		case msg := <-ch_msgToPack:
 			packet := pack(msg, sequenceNumber)
-			packetsToAcknowledge[sequenceNumber] = packetWithAttempts{packet: packet, attempts: 1}
+			packetsToBeConfirmed[sequenceNumber] = packetWithResendAttempts{packet: packet, attempts: 1}
 			ch_packetToNetwork <- packet
 			sequenceNumber = incrementWithOverflow(sequenceNumber)
 
 		case <-resendPacketsTicker.C:
-			for seqNum, noneConfirmedPacket := range packetsToAcknowledge {
-				print("RESENDING PACKETS, AMOUNT:", len(packetsToAcknowledge))
-				fmt.Println(", TYPE:", packetsToAcknowledge[seqNum].packet.Msg.Type)
-				if noneConfirmedPacket.attempts > c.NumOfRetries {
-					delete(packetsToAcknowledge, seqNum)
+			// Resends all packets that have not been confirmed yet every x milliseconds
+			for seqNum, packetAndAttempts := range packetsToBeConfirmed {
+				print("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
+				fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
+				if packetAndAttempts.attempts > c.NumOfRetries {
+					delete(packetsToBeConfirmed, seqNum)
 				} else {
-					noneConfirmedPacket.attempts++
-					packetsToAcknowledge[seqNum] = noneConfirmedPacket
-					ch_packetToNetwork <- noneConfirmedPacket.packet
+					packetAndAttempts.attempts++
+					packetsToBeConfirmed[seqNum] = packetAndAttempts
+					ch_packetToNetwork <- packetAndAttempts.packet
 				}
 			}
 		}
