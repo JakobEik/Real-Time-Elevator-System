@@ -37,24 +37,22 @@ func Fsm(
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
 			//start watchdog timer
-			ch_wdstart <- true
 
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
-			// stop watchdog timer
-			ch_wdstop <- true
+			ch_wdstart <- true // start watchdog timer
 
 			if shouldStop(&elev) {
 				//fmt.Println("DOOR OPEN")
+				ch_wdstop <- true // stop watchdog timer
 				drv.SetMotorDirection(drv.MD_Stop)
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
 				drv.SetDoorOpenLamp(true)
 				doorTimer.Reset(c.DoorOpenDuration)
 				//println("set door timer")
-
 			}
 			ch_newLocalState <- elev
 
@@ -76,7 +74,7 @@ func Fsm(
 			elev.Behavior = c.IDLE
 			//println("NO MORE ORDERS?", ordersIsEmpty(e))
 			if !ordersIsEmpty(&elev) {
-				nextOrder(&elev)
+				nextOrder(&elev, ch_wdstart)
 			}
 
 		case hallOrders := <-ch_globalHallOrders:
@@ -161,7 +159,7 @@ func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer
 
 }
 
-func nextOrder(e *ElevatorState) {
+func nextOrder(e *ElevatorState, ch_wdstart chan<- bool) {
 	direction, behavior := chooseElevDirection(e)
 	e.Direction = direction
 	e.Behavior = behavior
