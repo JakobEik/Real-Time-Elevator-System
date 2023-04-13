@@ -30,7 +30,7 @@ func PacketDistributor(
 	ch_msgToAssigner, ch_msgToDistributor chan<- c.NetworkMessage) {
 
 	var sequenceNumber uint32 = 0
-	ticker := time.NewTicker(c.ConfirmationWaitDuration)
+	resendPacketsTicker := time.NewTicker(c.ConfirmationWaitDuration)
 	packetsToAcknowledge := make(map[uint32]packetWithAttempts, 512) // map[seqNum]
 
 	for {
@@ -65,10 +65,8 @@ func PacketDistributor(
 			packetsToAcknowledge[sequenceNumber] = packetWithAttempts{packet: packet, attempts: 1}
 			ch_packetToNetwork <- packet
 			sequenceNumber = incrementWithOverflow(sequenceNumber)
-			// Function blocks until received or time limit reached. Might change this!
-			//sendPacketUntilConfirmation(ch_packetToNetwork, ch_msgReceived, packet)
 
-		case <-ticker.C:
+		case <-resendPacketsTicker.C:
 			for seqNum, noneConfirmedPacket := range packetsToAcknowledge {
 				if noneConfirmedPacket.attempts > c.NumOfRetries {
 					delete(packetsToAcknowledge, seqNum)
