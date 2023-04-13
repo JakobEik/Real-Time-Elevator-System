@@ -113,6 +113,16 @@ func Cost(elev e.ElevatorState, order drv.ButtonEvent) int {
 			cost = 1
 		}
 	}
+	switch order.Button {
+	case drv.BT_HallDown:
+		if elev.Orders[ordFloor][drv.BT_HallUp] == true {
+			cost = 0
+		}
+	case drv.BT_HallUp:
+		if elev.Orders[ordFloor][drv.BT_HallDown] == true {
+			cost = 0
+		}
+	}
 
 	return -cost
 }

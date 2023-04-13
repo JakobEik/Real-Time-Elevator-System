@@ -9,7 +9,7 @@ import (
 
 func Fsm(
 	ch_executeOrder <-chan drv.ButtonEvent,
-	ch_floorArrival <-chan int,
+	ch_floorArrival chan int,
 	ch_obstruction <-chan bool,
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
@@ -20,27 +20,20 @@ func Fsm(
 	//obstruct := false
 
 	elev := InitElev(c.N_FLOORS - 1)
-	// Clears all orders and goes to first floor
 	clearAllFloors(&elev)
 	drv.SetMotorDirection(drv.MD_Down)
-	//elev.Orders[0][2] = true
-	//nextOrder(&elev)
 	for {
 		select {
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
-			//println("OBSTRUCT:", obstruct)
-			//println("execute")
 			onNewOrderEvent(order, &elev, doorTimer)
-
 			ch_newLocalState <- elev
 
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
-
-			if shouldStop(&elev) {
+			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
 				drv.SetMotorDirection(drv.MD_Stop)
 				elev.Behavior = c.DOOR_OPEN
@@ -65,12 +58,16 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
-			//println("DOOR CLOSE")
+			println("DOOR CLOSE")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
-			//println("NO MORE ORDERS?", ordersIsEmpty(e))
-			if !ordersIsEmpty(&elev) {
-				nextOrder(&elev)
+			direction, behavior := chooseElevDirection(elev)
+			elev.Direction = direction
+			elev.Behavior = behavior
+			drv.SetMotorDirection(direction)
+			// In case there is another order on the same floor when it closes
+			if behavior == c.DOOR_OPEN {
+				ch_floorArrival <- elev.Floor
 			}
 
 		case hallOrders := <-ch_globalHallOrders:
@@ -104,7 +101,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 	btn_type := order.Button
 	switch e.Behavior {
 	case c.DOOR_OPEN:
-		if shouldClearImmediatly(e, floor, btn_type) {
+		if shouldClearImmediatly(*e, floor, btn_type) {
 			e.Orders[floor][btn_type] = false
 			doorTimer.Reset(c.DoorOpenDuration)
 		} else {
@@ -115,13 +112,14 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		e.Orders[floor][btn_type] = true
 
 	case c.IDLE:
-		if shouldClearImmediatly(e, floor, btn_type) {
+		if shouldClearImmediatly(*e, floor, btn_type) {
 			drv.SetDoorOpenLamp(true)
+			e.Behavior = c.DOOR_OPEN
 			doorTimer.Reset(c.DoorOpenDuration)
 			return
 		}
 		e.Orders[floor][btn_type] = true
-		direction, behavior := chooseElevDirection(e)
+		direction, behavior := chooseElevDirection(*e)
 		e.Direction = direction
 		e.Behavior = behavior
 		switch behavior {
@@ -139,31 +137,11 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 
 func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer) {
 	if obstruction && e.Behavior == c.DOOR_OPEN {
-		//println("OBSTRUCT")
 		doorTimer.Stop()
-		//e.Behavior = c.UNAVAILABLE
 	} else {
-		//println("OBSTR OFF")
 		doorTimer.Reset(c.DoorOpenDuration)
-		/*switch e.Behavior {
-
-		case c.DOOR_OPEN:
-			//println("RESET")
-			doorTimer.Reset(c.DoorOpenDuration)
-		}*/
 	}
 
-}
-
-func nextOrder(e *ElevatorState) {
-	direction, behavior := chooseElevDirection(e)
-	e.Direction = direction
-	e.Behavior = behavior
-	//println("BEHAVIOR NEXT ORDER:", behavior.String())
-	//println("DIRECTION:", direction)
-	if direction != drv.MD_Stop {
-		drv.SetMotorDirection(e.Direction)
-	}
 }
 
 func PrintState(elev ElevatorState) {

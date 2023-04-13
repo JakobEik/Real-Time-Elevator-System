@@ -5,11 +5,11 @@ import (
 	drv "Project/driver"
 )
 
-func ordersIsEmpty(e *ElevatorState) bool {
+func ordersIsEmpty(e ElevatorState) bool {
 	return !ordersAbove(e) && !ordersBelow(e) && !ordersHere(e)
 }
 
-func ordersAbove(e *ElevatorState) bool {
+func ordersAbove(e ElevatorState) bool {
 	if e.Floor >= c.N_FLOORS {
 		return false
 	}
@@ -23,7 +23,7 @@ func ordersAbove(e *ElevatorState) bool {
 	return false
 }
 
-func ordersBelow(e *ElevatorState) bool {
+func ordersBelow(e ElevatorState) bool {
 	if e.Floor <= 0 {
 		return false
 	}
@@ -37,7 +37,7 @@ func ordersBelow(e *ElevatorState) bool {
 	return false
 }
 
-func ordersHere(e *ElevatorState) bool {
+func ordersHere(e ElevatorState) bool {
 	for btn := 0; btn < c.N_BUTTONS; btn++ {
 		if e.Orders[e.Floor][btn] {
 			return true
@@ -46,7 +46,7 @@ func ordersHere(e *ElevatorState) bool {
 	return false
 }
 
-func chooseElevDirection(e *ElevatorState) (drv.MotorDirection, c.Behavior) {
+func chooseElevDirection(e ElevatorState) (drv.MotorDirection, c.Behavior) {
 	switch e.Direction {
 	case drv.MD_Up:
 		if ordersAbove(e) {
@@ -83,19 +83,17 @@ func chooseElevDirection(e *ElevatorState) (drv.MotorDirection, c.Behavior) {
 	}
 }
 
-func shouldStop(e *ElevatorState) bool {
+func shouldStop(e ElevatorState) bool {
 	switch e.Direction {
 	case drv.MD_Down:
-		return bool(
-			e.Orders[e.Floor][drv.BT_HallDown] ||
-				e.Orders[e.Floor][drv.BT_Cab] ||
-				!ordersBelow(e))
+		return e.Orders[e.Floor][drv.BT_HallDown] ||
+			e.Orders[e.Floor][drv.BT_Cab] ||
+			!ordersBelow(e)
 	case drv.MD_Up:
 
-		return bool(
-			e.Orders[e.Floor][drv.BT_HallUp] ||
-				e.Orders[e.Floor][drv.BT_Cab] ||
-				!ordersAbove(e))
+		return e.Orders[e.Floor][drv.BT_HallUp] ||
+			e.Orders[e.Floor][drv.BT_Cab] ||
+			!ordersAbove(e)
 	case drv.MD_Stop:
 		fallthrough
 	default:
@@ -104,9 +102,9 @@ func shouldStop(e *ElevatorState) bool {
 
 }
 
-func shouldClearImmediatly(e *ElevatorState, floor int, btn_type drv.ButtonType) bool {
+func shouldClearImmediatly(e ElevatorState, floor int, btn_type drv.ButtonType) bool {
 
-	return e.Floor == floor /*&& e.Behavior != c.MOVING*/ && ((e.Direction == drv.MD_Up && btn_type == drv.BT_HallUp) ||
+	return e.Floor == floor && ((e.Direction == drv.MD_Up && btn_type == drv.BT_HallUp) ||
 		(e.Direction == drv.MD_Down && btn_type == drv.BT_HallDown) ||
 		(e.Direction == drv.MD_Stop || btn_type == drv.BT_Cab))
 }
@@ -120,13 +118,13 @@ func clearAtCurrentFloor(e *ElevatorState) {
 	clearFloor(e, drv.BT_Cab)
 	switch e.Direction {
 	case drv.MD_Up:
-		if !ordersAbove(e) && !e.Orders[e.Floor][drv.BT_HallUp] {
+		if !ordersAbove(*e) && !e.Orders[e.Floor][drv.BT_HallUp] {
 			clearFloor(e, drv.BT_HallDown)
 		}
 		clearFloor(e, drv.BT_HallUp)
 
 	case drv.MD_Down:
-		if !ordersBelow(e) && !e.Orders[e.Floor][drv.BT_HallDown] {
+		if !ordersBelow(*e) && !e.Orders[e.Floor][drv.BT_HallDown] {
 			clearFloor(e, drv.BT_HallUp)
 		}
 		clearFloor(e, drv.BT_HallDown)
