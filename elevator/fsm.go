@@ -22,8 +22,9 @@ func Fsm(
 	elev := InitElev(c.N_FLOORS - 1)
 	// Clears all orders and goes to first floor
 	clearAllFloors(&elev)
-	elev.Orders[0][2] = true
-	nextOrder(&elev)
+	drv.SetMotorDirection(drv.MD_Down)
+	//elev.Orders[0][2] = true
+	//nextOrder(&elev)
 	for {
 		select {
 		case order := <-ch_executeOrder:
@@ -59,7 +60,7 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
-			obstruct = obstruction
+			//obstruct = obstruction
 			onObstructionEvent(obstruction, elev, doorTimer)
 			ch_newLocalState <- elev
 
