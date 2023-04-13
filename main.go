@@ -78,5 +78,12 @@ func main() {
 		ch_msgToAssigner,
 		ch_msgToPack)
 
-	e.Fsm(ch_executeOrder, ch_floorArrival, ch_obstruction, ch_stop, ch_localStateUpdated, ch_globalHallOrders)
+	e.Fsm(
+		ch_executeOrder,
+		ch_floorArrival,
+		ch_obstruction,
+		ch_stop,
+		ch_localStateUpdated,
+		ch_globalHallOrders,
+		ch_peerTxEnable)
 }

@@ -13,7 +13,8 @@ func Fsm(
 	ch_obstruction <-chan bool,
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
-	ch_globalHallOrders <-chan [][]bool) {
+	ch_globalHallOrders <-chan [][]bool,
+	ch_peerTxEnable chan<- bool) {
 
 	doorTimer := time.NewTimer(1)
 	<-doorTimer.C
@@ -53,8 +54,7 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
-			//obstruct = obstruction
-			onObstructionEvent(obstruction, elev, doorTimer)
+			onObstructionEvent(obstruction, &elev, doorTimer, ch_peerTxEnable)
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
@@ -135,11 +135,14 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 
 }
 
-func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer) {
+func onObstructionEvent(obstruction bool, e *ElevatorState, doorTimer *time.Timer, ch_peerTxEnable chan<- bool) {
 	if obstruction && e.Behavior == c.DOOR_OPEN {
 		doorTimer.Stop()
+		ch_peerTxEnable <- false
 	} else {
 		doorTimer.Reset(c.DoorOpenDuration)
+		clearAllFloors(e)
+		ch_peerTxEnable <- true
 	}
 
 }
