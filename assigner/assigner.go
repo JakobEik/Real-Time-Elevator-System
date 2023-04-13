@@ -18,11 +18,7 @@ func MasterNode(
 
 	globalState := utils.InitGlobalState()
 	println("LENGTH GLOBAL STATE:", len(globalState))
-	var elevatorIDsOnline []int
-
-	ch_distributeLostOrders := make(chan []string, 16)
-	ch_updateNewPeers := make(chan []string, 16)
-
+	var peersOnline []int
 	for {
 		select {
 		// MASTER
@@ -37,7 +33,7 @@ func MasterNode(
 
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
-				lowestCostElevator := calculateCost(globalState, order, elevatorIDsOnline)
+				lowestCostElevator := calculateCost(globalState, order, peersOnline)
 				packet := utils.CreateMessage(lowestCostElevator, order, c.DO_ORDER)
 				ch_msgToPack <- packet
 				fmt.Println("ORDER to elevator:", lowestCostElevator)
@@ -47,7 +43,7 @@ func MasterNode(
 				utils.DecodeContentToStruct(content, &state)
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
-				e.PrintGlobalState(globalState)
+				//e.PrintGlobalState(globalState)
 				if c.ElevatorID != c.MasterID {
 					continue
 				}
@@ -55,7 +51,7 @@ func MasterNode(
 				packet := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
 				ch_msgToPack <- packet
 
-				globalHallOrders := getGlobalHallOrders(globalState, elevatorIDsOnline)
+				globalHallOrders := getGlobalHallOrders(globalState, peersOnline)
 				packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
 				ch_msgToPack <- packet2
 
@@ -70,7 +66,7 @@ func MasterNode(
 					utils.DecodeContentToStruct(value, &state)
 					globalState[i] = state
 				}
-				e.PrintGlobalState(globalState)
+				//e.PrintGlobalState(globalState)
 
 			}
 
@@ -78,49 +74,63 @@ func MasterNode(
 		case update := <-ch_peerUpdate:
 			fmt.Println("PEER UPDATE:", update)
 			// Assign new master
-			elevatorIDsOnline = stringArrayToIntArray(update.Peers)
-			c.MasterID = getMaster(elevatorIDsOnline)
-
+			peersOnline = stringArrayToIntArray(update.Peers)
+			c.MasterID = getMaster(peersOnline)
+			if c.ElevatorID != c.MasterID {
+				continue
+			}
 			// Distribute orders from lost peers if there are any
-			println(len(update.Lost) > 0)
 			if len(update.Lost) > 0 {
-				ch_distributeLostOrders <- update.Lost
-			}
-
-			if len(update.New) > 0 {
-
-			}
-
-		case lostPeers := <-ch_distributeLostOrders:
-			if c.ElevatorID == c.MasterID {
-				IDs := stringArrayToIntArray(lostPeers)
+				IDs := stringArrayToIntArray(update.Lost)
 				for _, elevatorID := range IDs {
 					distributeOrders(globalState[elevatorID], ch_msgToPack)
 				}
 			}
-		case newPeers := <-ch_updateNewPeers:
-			if c.ElevatorID == c.MasterID {
-				IDs := stringArrayToIntArray(newPeers)
-				for _, elevatorID := range IDs {
-					stateUpdate := utils.CreateMessage(elevatorID, globalState, c.UPDATE_GLOBAL_STATE)
-					ch_msgToPack <- stateUpdate
-					hallOrders := getGlobalHallOrders(globalState, elevatorIDsOnline)
-					hallOrdersUpdate := utils.CreateMessage(elevatorID, hallOrders, c.GLOBAL_HALL_ORDERS)
-					ch_msgToPack <- hallOrdersUpdate
-				}
-			}
 
+			if len(update.New) > 0 {
+				elevatorID, _ := strconv.Atoi(update.New)
+				stateUpdate := utils.CreateMessage(elevatorID, globalState, c.UPDATE_GLOBAL_STATE)
+				ch_msgToPack <- stateUpdate
+
+				hallOrders := getGlobalHallOrders(globalState, peersOnline)
+				hallOrdersUpdate := utils.CreateMessage(elevatorID, hallOrders, c.GLOBAL_HALL_ORDERS)
+				ch_msgToPack <- hallOrdersUpdate
+
+				cabCalls := getCabCalls(globalState[elevatorID])
+
+				for _, order := range cabCalls {
+					msg := utils.CreateMessage(elevatorID, order, c.DO_ORDER)
+					ch_msgToPack <- msg
+				}
+
+			}
 		}
 
 	}
 
 }
 
+func getCabCalls(e e.ElevatorState) []drv.ButtonEvent {
+	orders := e.Orders
+	var cabColumn []bool
+	var cabCalls []drv.ButtonEvent
+	for _, row := range orders {
+		cabColumn = append(cabColumn, row[len(row)-1])
+	}
+	for floor, cabCall := range cabColumn {
+		if cabCall {
+			order := drv.ButtonEvent{Floor: floor, Button: drv.BT_Cab}
+			cabCalls = append(cabCalls, order)
+		}
+	}
+	return cabCalls
+}
+
 // distributeOrders sends every order from the given elevator to the master of the system
 func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) {
 	orders := elevator.Orders
-	println("DISTRIBUTE THIS ELEVATOR")
-	e.PrintState(elevator)
+	//println("DISTRIBUTE THIS ELEVATOR")
+	//e.PrintState(elevator)
 	for floor := range orders {
 		for btn := 0; btn < c.N_BUTTONS-1; btn++ {
 			if orders[floor][btn] == true {
