@@ -19,9 +19,6 @@ func Distributor(
 	ch_localStateUpdated <-chan e.ElevatorState,
 	ch_buttonPress <-chan drv.ButtonEvent) {
 
-	globalState := utils.InitGlobalState()
-	println(globalState)
-
 	for {
 		select {
 		// LOCAL CHANNELS
@@ -50,16 +47,6 @@ func Distributor(
 				utils.DecodeContentToStruct(content, &order)
 				ch_executeOrder <- order
 				fmt.Println("EXECUTE ORDER:", order)
-
-			case c.UPDATE_GLOBAL_STATE:
-				content := msg.Content.([]interface{})
-				// Iterates through the array, converts each one to ElevatorState and updates the global state
-				for i, value := range content {
-					var state e.ElevatorState
-					utils.DecodeContentToStruct(value, &state)
-					globalState[i] = state
-				}
-
 			case c.GLOBAL_HALL_ORDERS:
 				var orders [][]bool
 				utils.DecodeContentToStruct(content, &orders)

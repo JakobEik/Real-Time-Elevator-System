@@ -11,8 +11,8 @@ const N_ELEVATORS = 3
 const DoorOpenDuration = time.Second * 3
 const ToEveryone = -1
 
-const NumOfRetries = 1
-const ConfirmationWaitDuration = time.Millisecond * 10
+const NumOfRetries = 10
+const ConfirmationWaitDuration = time.Millisecond * 20
 
 var ElevatorID int
 var MasterID = 0
