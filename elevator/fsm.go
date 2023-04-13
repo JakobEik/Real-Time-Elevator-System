@@ -17,7 +17,7 @@ func Fsm(
 
 	doorTimer := time.NewTimer(1)
 	<-doorTimer.C
-	obstruct := false
+	//obstruct := false
 
 	elev := InitElev(c.N_FLOORS - 1)
 	// Clears all orders and goes to first floor
@@ -29,10 +29,9 @@ func Fsm(
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
 			//println("OBSTRUCT:", obstruct)
-			if !obstruct {
-				//println("execute")
-				onNewOrderEvent(order, &elev, doorTimer)
-			}
+			//println("execute")
+			onNewOrderEvent(order, &elev, doorTimer)
+
 			ch_newLocalState <- elev
 
 		case floor := <-ch_floorArrival:
@@ -138,19 +137,19 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 }
 
 func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer) {
-	if obstruction && e.Behavior == c.IDLE {
+	if obstruction && e.Behavior == c.DOOR_OPEN {
 		//println("OBSTRUCT")
 		doorTimer.Stop()
-		e.Behavior = c.UNAVAILABLE
-		<-doorTimer.C
+		//e.Behavior = c.UNAVAILABLE
 	} else {
 		//println("OBSTR OFF")
-		switch e.Behavior {
+		doorTimer.Reset(c.DoorOpenDuration)
+		/*switch e.Behavior {
 
 		case c.DOOR_OPEN:
 			//println("RESET")
 			doorTimer.Reset(c.DoorOpenDuration)
-		}
+		}*/
 	}
 
 }

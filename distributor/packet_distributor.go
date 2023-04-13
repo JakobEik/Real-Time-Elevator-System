@@ -3,6 +3,7 @@ package distributor
 import (
 	c "Project/config"
 	"Project/utils"
+	"fmt"
 	"time"
 )
 
@@ -68,6 +69,8 @@ func PacketDistributor(
 
 		case <-resendPacketsTicker.C:
 			for seqNum, noneConfirmedPacket := range packetsToAcknowledge {
+				print("RESENDING PACKETS, AMOUNT:", len(packetsToAcknowledge))
+				fmt.Println(", TYPE:", packetsToAcknowledge[seqNum].packet.Msg.Type)
 				if noneConfirmedPacket.attempts > c.NumOfRetries {
 					delete(packetsToAcknowledge, seqNum)
 				} else {
