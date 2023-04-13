@@ -61,8 +61,7 @@ func main() {
 	go bcast.Receiver(20321, ch_packetFromNetwork)
 	go peers.Transmitter(20123, ElevatorStrID, ch_peerTxEnable)
 	go peers.Receiver(20123, ch_peerUpdate)
-
-	// Watchdog go routine
+	
 	go watchdog.Watchdog(config.WatchdogTimerDuration, ch_watchdogAlive, ch_watchdogDead)
 
 	go d.Distributor(
