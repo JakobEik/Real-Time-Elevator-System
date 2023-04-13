@@ -19,6 +19,9 @@ func Distributor(
 	ch_localStateUpdated <-chan e.ElevatorState,
 	ch_buttonPress <-chan drv.ButtonEvent) {
 
+	globalState := utils.InitGlobalState()
+	println(len(globalState))
+
 	for {
 		select {
 		// LOCAL CHANNELS
