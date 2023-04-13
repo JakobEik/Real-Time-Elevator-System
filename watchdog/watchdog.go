@@ -1,16 +1,17 @@
 package watchdog
 
 import (
+	c "Project/config"
 	"fmt"
 	"time"
 )
 
-func Watchdog(sec int, ch_wdstart chan bool, ch_wdstop chan bool, ch_bark chan bool) {
-	wdTimer := time.NewTimer(time.Duration(sec) * time.Second)
+func Watchdog(ch_wdstart chan bool, ch_wdstop chan bool, ch_bark chan bool) {
+	wdTimer := time.NewTimer(c.WatchdogTimerDuration)
 	for {
 		select {
 		case <-ch_wdstart:
-			wdTimer.Reset(time.Duration(sec) * time.Second)
+			wdTimer.Reset(c.WatchdogTimerDuration)
 			fmt.Println("WATCHDOG RESET")
 
 		case <-ch_wdstop:
@@ -18,9 +19,10 @@ func Watchdog(sec int, ch_wdstart chan bool, ch_wdstop chan bool, ch_bark chan b
 			fmt.Println("WATCHDOG STOPPED")
 
 		case <-wdTimer.C:
+			println("WATCHDOG BARK FROM WATCHDOG")
 			ch_bark <- true
 			wdTimer.Stop()
-			println("WATCHDOG BARK FROM WATCHDOG")
+			panic("PANIC: HA DET")
 		}
 	}
 }

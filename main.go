@@ -64,7 +64,7 @@ func main() {
 	go peers.Receiver(20123, ch_peerUpdate)
 
 	// Watchdog go routine
-	go watchdog.Watchdog(config.WatchdogTimerDuration, ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
+	go watchdog.Watchdog(ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
 
 	go d.Distributor(
 		ch_msgToDistributor,

@@ -55,8 +55,8 @@ func Distributor(
 				ch_globalHallOrders <- orders
 			}
 
-		// case <-ch_watchdogStuckBark:
-		// 	fmt.Println("WATCHDOG BARK FROM DISTRIBUTOR")
+		case <-ch_watchdogStuckBark:
+			fmt.Println("WATCHDOG BARK FROM DISTRIBUTOR")
 		}
 	}
 }

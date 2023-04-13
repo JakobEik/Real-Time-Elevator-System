@@ -37,6 +37,7 @@ func Fsm(
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
 			//start watchdog timer
+			ch_wdstart <- true
 
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
@@ -74,7 +75,8 @@ func Fsm(
 			elev.Behavior = c.IDLE
 			//println("NO MORE ORDERS?", ordersIsEmpty(e))
 			if !ordersIsEmpty(&elev) {
-				nextOrder(&elev, ch_wdstart)
+				nextOrder(&elev)
+				ch_wdstart <- true // start watchdog timer
 			}
 
 		case hallOrders := <-ch_globalHallOrders:
@@ -159,7 +161,7 @@ func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer
 
 }
 
-func nextOrder(e *ElevatorState, ch_wdstart chan<- bool) {
+func nextOrder(e *ElevatorState) {
 	direction, behavior := chooseElevDirection(e)
 	e.Direction = direction
 	e.Behavior = behavior
