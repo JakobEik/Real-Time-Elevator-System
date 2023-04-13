@@ -13,7 +13,10 @@ func Fsm(
 	ch_obstruction <-chan bool,
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
-	ch_globalHallOrders <-chan [][]bool) {
+	ch_globalHallOrders <-chan [][]bool,
+	ch_wdstart chan<- bool,
+	ch_wdstop chan<- bool,
+) {
 
 	doorTimer := time.NewTimer(1)
 	<-doorTimer.C
@@ -32,13 +35,16 @@ func Fsm(
 			//println("OBSTRUCT:", obstruct)
 			//println("execute")
 			onNewOrderEvent(order, &elev, doorTimer)
-
 			ch_newLocalState <- elev
+			//start watchdog timer
+			ch_wdstart <- true
 
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
+			// stop watchdog timer
+			ch_wdstop <- true
 
 			if shouldStop(&elev) {
 				//fmt.Println("DOOR OPEN")

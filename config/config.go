@@ -5,20 +5,14 @@ import (
 	"time"
 )
 
-const N_FLOORS = 7
+const N_FLOORS = 4
 const N_BUTTONS = 3
 const N_ELEVATORS = 3
 const DoorOpenDuration = time.Second * 3
 const ToEveryone = -1
-
-<<<<<<< HEAD
-const NumOfRetries = 1
-const ConfirmationWaitDuration = time.Millisecond * 10
 const WatchdogTimerDuration = 5
-=======
 const NumOfRetries = 10
 const ConfirmationWaitDuration = time.Millisecond * 20
->>>>>>> fe2cc59e11e3186d3437cbfbff27b6b60a51b46b
 
 var ElevatorID int
 var MasterID = 0
