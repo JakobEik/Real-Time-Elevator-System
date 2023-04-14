@@ -5,6 +5,7 @@ import (
 	drv "Project/driver"
 	e "Project/elevator"
 	"Project/utils"
+	"Project/watchdog"
 	"fmt"
 )
 
@@ -17,15 +18,19 @@ func Distributor(
 	// From Local
 	ch_localStateUpdated <-chan e.ElevatorState,
 	ch_buttonPress <-chan drv.ButtonEvent,
-	// watchdog
-	ch_watchdogStuckBark <-chan bool,
-) {
+	// Monitoring channels
+	ch_failure <-chan bool,
+	ch_peerTxEnable chan<- bool) {
 
-	globalState := utils.InitGlobalState()
-	println(len(globalState))
+	ch_bark := make(chan bool)
+	ch_pet := make(chan bool)
+	go watchdog.Watchdog(ch_bark, ch_pet, "Distributor")
 
 	for {
 		select {
+		//Watchdog
+		case <-ch_bark:
+			ch_pet <- true
 		// LOCAL CHANNELS
 		case order := <-ch_buttonPress:
 			//fmt.Println("Buttonpress:", order)
@@ -52,14 +57,14 @@ func Distributor(
 				utils.DecodeContentToStruct(content, &order)
 				ch_executeOrder <- order
 				fmt.Println("EXECUTE ORDER:", order)
-			case c.GLOBAL_HALL_ORDERS:
+			case c.HALL_LIGHTS_UPDATE:
 				var orders [][]bool
 				utils.DecodeContentToStruct(content, &orders)
 				ch_globalHallOrders <- orders
 			}
 
-		case <-ch_watchdogStuckBark:
-			fmt.Println("WATCHDOG BARK FROM DISTRIBUTOR")
+		case failure := <-ch_failure:
+			ch_peerTxEnable <- !failure
 		}
 	}
 }

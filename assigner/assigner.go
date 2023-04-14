@@ -6,6 +6,7 @@ import (
 	e "Project/elevator"
 	p "Project/network/peers"
 	"Project/utils"
+	"Project/watchdog"
 	"fmt"
 	"strconv"
 	//drv "Project/driver"
@@ -16,11 +17,18 @@ func MasterNode(
 	ch_msgToAssigner <-chan c.NetworkMessage,
 	ch_msgToPack chan<- c.NetworkMessage) {
 
+	ch_bark := make(chan bool)
+	ch_pet := make(chan bool)
+	go watchdog.Watchdog(ch_bark, ch_pet, "Assigner")
+
 	globalState := utils.InitGlobalState()
 	println("LENGTH GLOBAL STATE:", len(globalState))
 	var peersOnline []int
 	for {
 		select {
+		//Watchdog
+		case <-ch_bark:
+			ch_pet <- true
 		// MASTER
 		case msg := <-ch_msgToAssigner:
 			//fmt.Println("MASTER RECEIVE:", msg.Type)
@@ -43,12 +51,15 @@ func MasterNode(
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
 				if c.ElevatorID == c.MasterID {
-					packet := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
-					ch_msgToPack <- packet
+					for _, ID := range peersOnline {
+						globalStateUpdate := utils.CreateMessage(ID, globalState, c.UPDATE_GLOBAL_STATE)
+						ch_msgToPack <- globalStateUpdate
 
-					globalHallOrders := getGlobalHallOrders(globalState, peersOnline)
-					packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
-					ch_msgToPack <- packet2
+						globalHallOrders := getGlobalHallOrders(globalState, peersOnline)
+						hallLightsUpdate := utils.CreateMessage(ID, globalHallOrders, c.HALL_LIGHTS_UPDATE)
+						ch_msgToPack <- hallLightsUpdate
+					}
+
 				}
 
 			// SLAVE
@@ -86,7 +97,7 @@ func MasterNode(
 				ch_msgToPack <- stateUpdate
 
 				hallOrders := getGlobalHallOrders(globalState, peersOnline)
-				hallOrdersUpdate := utils.CreateMessage(elevatorID, hallOrders, c.GLOBAL_HALL_ORDERS)
+				hallOrdersUpdate := utils.CreateMessage(elevatorID, hallOrders, c.HALL_LIGHTS_UPDATE)
 				ch_msgToPack <- hallOrdersUpdate
 
 				cabCalls := getCabCalls(globalState[elevatorID])

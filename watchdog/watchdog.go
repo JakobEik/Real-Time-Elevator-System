@@ -1,28 +1,26 @@
 package watchdog
 
 import (
-	c "Project/config"
-	"fmt"
 	"time"
 )
 
-func Watchdog(ch_wdstart chan bool, ch_wdstop chan bool, ch_bark chan bool) {
-	wdTimer := time.NewTimer(c.WatchdogTimerDuration)
+const watchdogTimerDuration = time.Millisecond * 500
+
+func Watchdog(ch_bark chan<- bool, ch_pet <-chan bool, moduleName string) {
+	wdTimer := time.NewTicker(watchdogTimerDuration)
+	ch_bark <- true
+	pet := false
 	for {
 		select {
-		case <-ch_wdstart:
-			wdTimer.Reset(c.WatchdogTimerDuration)
-			fmt.Println("WATCHDOG RESET")
-
-		case <-ch_wdstop:
-			wdTimer.Stop()
-			fmt.Println("WATCHDOG STOPPED")
-
+		case value := <-ch_pet:
+			pet = value
 		case <-wdTimer.C:
-			println("WATCHDOG BARK FROM WATCHDOG")
+			if pet == false {
+				panic("Watchdog timer limit reached for " + moduleName)
+			}
+			pet = false
 			ch_bark <- true
-			wdTimer.Stop()
-			panic("PANIC: HA DET")
+
 		}
 	}
 }
