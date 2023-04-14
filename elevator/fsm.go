@@ -3,9 +3,13 @@ package elevator
 import (
 	c "Project/config"
 	drv "Project/driver"
+	"Project/watchdog"
 	"fmt"
 	"time"
 )
+
+const motorLossTimeDuration = time.Second * 4
+const doorOpenDuration = time.Second * 3
 
 func Fsm(
 	ch_executeOrder <-chan drv.ButtonEvent,
@@ -14,14 +18,16 @@ func Fsm(
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
 	ch_globalHallOrders <-chan [][]bool,
-	ch_wdstart chan<- bool,
-	ch_wdstop chan<- bool,
-	ch_peerTxEnable chan<- bool) {
-  
+	ch_failure chan<- bool) {
+
+	ch_bark := make(chan bool)
+	ch_pet := make(chan bool)
+	go watchdog.Watchdog(ch_bark, ch_pet, "FSM")
+
 	doorTimer := time.NewTimer(1)
 	doorTimer.Stop()
-	watchdogTimer := time.NewTimer(1)
-	watchdogTimer.Stop()
+	motorLossTimer := time.NewTimer(1)
+	motorLossTimer.Stop()
 
 	elev := InitElev(c.N_FLOORS - 1)
 	clearAllFloors(&elev)
@@ -29,26 +35,33 @@ func Fsm(
 
 	for {
 		select {
+		//Watchdog
+		case <-ch_bark:
+			ch_pet <- true
+		case hallOrders := <-ch_globalHallOrders:
+			setHallLights(hallOrders)
+
+		case <-motorLossTimer.C:
+			ch_failure <- true
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
-			//start watchdog timer
-			watchdogTimer.Reset(c.WatchdogTimerDuration)
+			motorLossTimer.Reset(motorLossTimeDuration)
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
-			ch_wdstart <- true // start watchdog timer
-      
+			motorLossTimer.Reset(motorLossTimeDuration)
+
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
-				ch_wdstop <- true // stop watchdog timer
+				motorLossTimer.Stop()
 				drv.SetMotorDirection(drv.MD_Stop)
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
 				drv.SetDoorOpenLamp(true)
-				doorTimer.Reset(c.DoorOpenDuration)
+				doorTimer.Reset(doorOpenDuration)
 				//println("set door timer")
 			}
 			ch_newLocalState <- elev
@@ -63,17 +76,16 @@ func Fsm(
 		case obstruction := <-ch_obstruction:
 			if obstruction && elev.Behavior == c.DOOR_OPEN {
 				doorTimer.Stop()
-				ch_peerTxEnable <- false
+				motorLossTimer.Stop()
 				time.Sleep(time.Millisecond * 50)
 				clearAllFloors(&elev)
 			} else {
-				doorTimer.Reset(c.DoorOpenDuration)
-				ch_peerTxEnable <- true
+				doorTimer.Reset(doorOpenDuration)
+				ch_failure <- false
 			}
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
-			println("DOOR CLOSE")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
 			// Next Order
@@ -81,7 +93,7 @@ func Fsm(
 			drv.SetMotorDirection(elev.Direction)
 
 			if elev.Direction != drv.MD_Stop {
-				ch_wdstart <- true // start watchdog timer
+				motorLossTimer.Reset(motorLossTimeDuration)
 			}
 
 			if elev.Behavior == c.DOOR_OPEN {
@@ -89,12 +101,6 @@ func Fsm(
 				// for this elevator, this will open the door again and clear the order
 				ch_floorArrival <- elev.Floor
 			}
-
-		case hallOrders := <-ch_globalHallOrders:
-			setHallLights(hallOrders)
-
-		case <-watchdogTimer.C:
-			ch_failure <- true	
 		}
 		//PrintState(elev)
 
@@ -126,7 +132,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 	case c.DOOR_OPEN:
 		if shouldClearImmediatly(*e, floor, btn_type) {
 			e.Orders[floor][btn_type] = false
-			doorTimer.Reset(c.DoorOpenDuration)
+			doorTimer.Reset(doorOpenDuration)
 		} else {
 			e.Orders[floor][btn_type] = true
 		}
@@ -138,7 +144,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		if shouldClearImmediatly(*e, floor, btn_type) {
 			drv.SetDoorOpenLamp(true)
 			e.Behavior = c.DOOR_OPEN
-			doorTimer.Reset(c.DoorOpenDuration)
+			doorTimer.Reset(doorOpenDuration)
 			return
 		}
 		e.Orders[floor][btn_type] = true
@@ -146,7 +152,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		switch e.Behavior {
 		case c.DOOR_OPEN:
 			drv.SetDoorOpenLamp(true)
-			doorTimer.Reset(c.DoorOpenDuration)
+			doorTimer.Reset(doorOpenDuration)
 			clearAtCurrentFloor(e)
 
 		case c.MOVING:

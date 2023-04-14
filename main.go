@@ -8,7 +8,6 @@ import (
 	e "Project/elevator"
 	"Project/network/bcast"
 	"Project/network/peers"
-	"Project/watchdog"
 	"os"
 	"strconv"
 )
@@ -31,6 +30,7 @@ func main() {
 	ch_localStateUpdated := make(chan e.ElevatorState, bufferSize)
 	ch_executeOrder := make(chan drv.ButtonEvent, bufferSize)
 	ch_globalHallOrders := make(chan [][]bool, bufferSize)
+	ch_failure := make(chan bool, bufferSize)
 
 	// Channels for Packet Distributor
 	ch_msgToPack := make(chan config.NetworkMessage, bufferSize)
@@ -42,11 +42,6 @@ func main() {
 	ch_floorArrival := make(chan int, bufferSize)
 	ch_obstruction := make(chan bool, bufferSize)
 	ch_stop := make(chan bool)
-
-	// Channels for watchdog
-	ch_wdstart := make(chan bool)
-	ch_wdstop := make(chan bool)
-	ch_watchdogStuckBark := make(chan bool)
 
 	//drv.Init("localhost:15657", config.N_FLOORS)
 	drv.Init("localhost:"+port, config.N_FLOORS)
@@ -62,11 +57,6 @@ func main() {
 	go bcast.Receiver(23456, ch_packetFromNetwork)
 	go peers.Transmitter(34567, ElevatorStrID, ch_peerTxEnable)
 	go peers.Receiver(34567, ch_peerUpdate)
-	
-	go watchdog.Watchdog(ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
-
-	// Watchdog go routine
-	go watchdog.Watchdog(ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
 
 	go d.Distributor(
 		ch_msgToDistributor,
@@ -75,8 +65,8 @@ func main() {
 		ch_globalHallOrders,
 		ch_localStateUpdated,
 		ch_buttonPress,
-		ch_watchdogStuckBark,
-	)
+		ch_failure,
+		ch_peerTxEnable)
 
 	go d.PacketDistributor(
 		ch_packetFromNetwork,
@@ -97,6 +87,5 @@ func main() {
 		ch_stop,
 		ch_localStateUpdated,
 		ch_globalHallOrders,
-    ch_wdstart, ch_wdstop,
-		ch_peerTxEnable)
+		ch_failure)
 }

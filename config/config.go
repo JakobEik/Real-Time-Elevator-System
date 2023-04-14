@@ -8,11 +8,8 @@ import (
 const N_FLOORS = 4
 const N_BUTTONS = 3
 const N_ELEVATORS = 3
-const DoorOpenDuration = time.Second * 3
-const ToEveryone = -1
-const WatchdogTimerDuration = time.Second * 5
-const NumOfRetries = 10
-const ConfirmationWaitDuration = time.Millisecond * 40
+
+const ConfirmationWaitDuration = time.Millisecond * 30
 
 var ElevatorID int
 var MasterID = 0
@@ -23,7 +20,6 @@ const (
 	IDLE Behavior = iota
 	DOOR_OPEN
 	MOVING
-	UNAVAILABLE
 )
 
 func (b Behavior) String() string {
@@ -47,7 +43,7 @@ const (
 	UPDATE_GLOBAL_STATE
 	MSG_RECEIVED
 	LOCAL_STATE_CHANGED
-	GLOBAL_HALL_ORDERS
+	HALL_LIGHTS_UPDATE
 )
 
 func (t MessageType) String() string {
@@ -62,8 +58,8 @@ func (t MessageType) String() string {
 		return "MSG_RECEIVED"
 	case LOCAL_STATE_CHANGED:
 		return "LOCAL_STATE_CHANGED"
-	case GLOBAL_HALL_ORDERS:
-		return "GLOBAL_HALL_ORDERS"
+	case HALL_LIGHTS_UPDATE:
+		return "HALL_LIGHTS_UPDATE"
 	default:
 		return fmt.Sprintf("%d", int(t))
 	}

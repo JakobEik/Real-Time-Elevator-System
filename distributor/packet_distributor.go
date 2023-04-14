@@ -3,6 +3,7 @@ package distributor
 import (
 	c "Project/config"
 	"Project/utils"
+	"Project/watchdog"
 	"fmt"
 	"time"
 )
@@ -13,22 +14,26 @@ type Packet struct {
 	SequenceNumber uint32
 }
 
-// Used for resending packets that havent been acknowledged
+// Used for resending packets that havent been acknowledged yet
 type packetWithResendAttempts struct {
 	packet   Packet
 	attempts uint8
 }
 
-// PacketDistributor distributes all messages from local to the network, and continue to send if no acknowledgment of
-// the message has been received.
-// It also distributes the messages from the network to the correct modules in the local elevator such that
-// one module does not receive a message from the packet channel that is not intended for it, resulting in
-// the message never arriving to the correct module.
+const numOfRetries = 10
+
+// PacketDistributor distributes all messages between local and the network.
+// Also continues to send a packet if no acknowledgment of the message has been received.
+// There is one channel each for assigner and distributor, this is to prevent a data race
 func PacketDistributor(
 	ch_packetFromNetwork <-chan Packet,
 	ch_packetToNetwork chan<- Packet,
 	ch_msgToPack <-chan c.NetworkMessage,
 	ch_msgToAssigner, ch_msgToDistributor chan<- c.NetworkMessage) {
+
+	ch_bark := make(chan bool)
+	ch_pet := make(chan bool)
+	go watchdog.Watchdog(ch_bark, ch_pet, "Packet Distributor")
 
 	var sequenceNumber uint32 = 0
 	resendPacketsTicker := time.NewTicker(c.ConfirmationWaitDuration)
@@ -36,6 +41,9 @@ func PacketDistributor(
 
 	for {
 		select {
+		//Watchdog
+		case <-ch_bark:
+			ch_pet <- true
 		case packet := <-ch_packetFromNetwork:
 			//fmt.Println("RECEIVE:", packet.Msg.Type)
 			if acceptPacket(packet) {
@@ -52,7 +60,7 @@ func PacketDistributor(
 				// TO DISTRIBUTOR
 				case c.DO_ORDER:
 					fallthrough
-				case c.GLOBAL_HALL_ORDERS:
+				case c.HALL_LIGHTS_UPDATE:
 					ch_msgToDistributor <- packet.Msg
 					ch_packetToNetwork <- confirmMessage(packet)
 
@@ -72,7 +80,7 @@ func PacketDistributor(
 			for seqNum, packetAndAttempts := range packetsToBeConfirmed {
 				print("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
 				fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
-				if packetAndAttempts.attempts > c.NumOfRetries {
+				if packetAndAttempts.attempts > numOfRetries {
 					delete(packetsToBeConfirmed, seqNum)
 				} else {
 					packetAndAttempts.attempts++
@@ -96,7 +104,7 @@ func incrementWithOverflow(number uint32) uint32 {
 
 func acceptPacket(packet Packet) bool {
 	receiverID := packet.Msg.ReceiverID
-	return receiverID == c.ElevatorID || receiverID == c.ToEveryone
+	return receiverID == c.ElevatorID
 
 }
 
