@@ -8,7 +8,11 @@ import (
 	e "Project/elevator"
 	"Project/network/bcast"
 	"Project/network/peers"
+	"fmt"
+	"log"
 	"os"
+	"os/exec"
+	"os/signal"
 	"strconv"
 )
 
@@ -19,6 +23,8 @@ func main() {
 	port := os.Args[1]
 	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
 	ElevatorStrID := os.Args[2]
+
+	// exec.Command("cmd", "/C", "start", "powershell", "go", "run", "main.go 9999 0").Run()
 
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
@@ -58,6 +64,9 @@ func main() {
 	go peers.Transmitter(34567, ElevatorStrID, ch_peerTxEnable)
 	go peers.Receiver(34567, ch_peerUpdate)
 
+	// Error handling
+	go atExit(port, ElevatorStrID)
+
 	go d.Distributor(
 		ch_msgToDistributor,
 		ch_msgToPack,
@@ -88,4 +97,20 @@ func main() {
 		ch_localStateUpdated,
 		ch_globalHallOrders,
 		ch_failure)
+}
+
+// Error function
+func atExit(port string, id string) {
+	sigchan := make(chan os.Signal, 10)
+	signal.Notify(sigchan, os.Interrupt)
+	<-sigchan
+	drv.SetMotorDirection(drv.MD_Stop)
+	fmt.Println("CTRL-C pressed, shutting down...")
+	err := exec.Command("cmd", "/C", "start", "powershell", "go", "run", fmt.Sprintf("main.go %s %s", port, id)).Run()
+
+	if err != nil {
+		fmt.Println("Unable to reboot process, crashing...")
+	}
+	log.Println("Program killed !")
+	os.Exit(0)
 }

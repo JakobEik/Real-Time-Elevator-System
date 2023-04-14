@@ -43,3 +43,4 @@ func DecodeContentToStruct(data interface{}, correctStruct interface{}) {
 	}
 
 }
+

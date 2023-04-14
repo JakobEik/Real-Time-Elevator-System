@@ -6,6 +6,7 @@ import (
 	e "Project/elevator"
 	"Project/utils"
 	"Project/watchdog"
+	"os/exec"
 )
 
 func Distributor(
@@ -21,6 +22,7 @@ func Distributor(
 	ch_failure <-chan bool,
 	ch_peerTxEnable chan<- bool) {
 
+	ch_peerTxEnable <- true // Enable peer transmitter by default
 	ch_bark := make(chan bool)
 	ch_pet := make(chan bool)
 	go watchdog.Watchdog(ch_bark, ch_pet, "Distributor")
@@ -64,6 +66,7 @@ func Distributor(
 
 		case failure := <-ch_failure:
 			ch_peerTxEnable <- !failure
+			exec.Command("cmd", "/C", "start", "powershell", "go", "run", "main.go 9999 0").Run()
 		}
 	}
 }
