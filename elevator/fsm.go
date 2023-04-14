@@ -35,7 +35,6 @@ func Fsm(
 			ch_newLocalState <- elev
 			//start watchdog timer
 			watchdogTimer.Reset(c.WatchdogTimerDuration)
-
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			elev.Floor = floor
@@ -80,9 +79,11 @@ func Fsm(
 			// Next Order
 			elev.Direction, elev.Behavior = chooseElevDirection(elev)
 			drv.SetMotorDirection(elev.Direction)
+
 			if elev.Direction != drv.MD_Stop {
 				ch_wdstart <- true // start watchdog timer
 			}
+
 			if elev.Behavior == c.DOOR_OPEN {
 				// If there is another hall order at his floor in a different direction but there are no other orders
 				// for this elevator, this will open the door again and clear the order

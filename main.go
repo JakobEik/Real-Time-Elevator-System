@@ -65,6 +65,9 @@ func main() {
 	
 	go watchdog.Watchdog(ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
 
+	// Watchdog go routine
+	go watchdog.Watchdog(ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
+
 	go d.Distributor(
 		ch_msgToDistributor,
 		ch_msgToPack,
@@ -94,6 +97,6 @@ func main() {
 		ch_stop,
 		ch_localStateUpdated,
 		ch_globalHallOrders,
-    	ch_wdstart, ch_wdstop,
+    ch_wdstart, ch_wdstop,
 		ch_peerTxEnable)
 }
