@@ -130,7 +130,6 @@ func clearAtCurrentFloor(e *ElevatorState) {
 		clearFloor(e, drv.BT_HallDown)
 
 	case drv.MD_Stop:
-	default:
 		clearFloor(e, drv.BT_HallDown)
 		clearFloor(e, drv.BT_HallUp)
 	}

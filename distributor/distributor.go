@@ -6,7 +6,6 @@ import (
 	e "Project/elevator"
 	"Project/utils"
 	"Project/watchdog"
-	"fmt"
 )
 
 func Distributor(
@@ -56,7 +55,7 @@ func Distributor(
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
 				ch_executeOrder <- order
-				fmt.Println("EXECUTE ORDER:", order)
+				//fmt.Println("EXECUTE ORDER:", order)
 			case c.HALL_LIGHTS_UPDATE:
 				var orders [][]bool
 				utils.DecodeContentToStruct(content, &orders)

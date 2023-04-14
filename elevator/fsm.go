@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const motorLossTimeDuration = time.Second * 4
+const motorLossTimeDuration = time.Second * 5
 const doorOpenDuration = time.Second * 3
 
 func Fsm(
@@ -32,6 +32,7 @@ func Fsm(
 	elev := InitElev(c.N_FLOORS - 1)
 	clearAllFloors(&elev)
 	drv.SetMotorDirection(drv.MD_Down)
+	motorLossTimer.Stop()
 
 	for {
 		select {
@@ -43,21 +44,21 @@ func Fsm(
 
 		case <-motorLossTimer.C:
 			ch_failure <- true
+			println("======================= MOTOR LOSS ==============================")
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
-			onNewOrderEvent(order, &elev, doorTimer)
+			onNewOrderEvent(order, &elev, doorTimer, motorLossTimer)
 			ch_newLocalState <- elev
-			motorLossTimer.Reset(motorLossTimeDuration)
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
+			motorLossTimer.Reset(motorLossTimeDuration)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
-			motorLossTimer.Reset(motorLossTimeDuration)
 
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
-				motorLossTimer.Stop()
 				drv.SetMotorDirection(drv.MD_Stop)
+				setMotorLossTimer(drv.MD_Stop, motorLossTimer)
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
 				drv.SetDoorOpenLamp(true)
@@ -70,13 +71,12 @@ func Fsm(
 			//println("STOP")
 			clearAllFloors(&elev)
 			firstFloor := drv.ButtonEvent{Floor: 0, Button: drv.BT_Cab}
-			onNewOrderEvent(firstFloor, &elev, doorTimer)
+			onNewOrderEvent(firstFloor, &elev, doorTimer, motorLossTimer)
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
 			if obstruction && elev.Behavior == c.DOOR_OPEN {
 				doorTimer.Stop()
-				motorLossTimer.Stop()
 				time.Sleep(time.Millisecond * 50)
 				clearAllFloors(&elev)
 			} else {
@@ -86,16 +86,13 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
+			//println("DOOR TIMER")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
 			// Next Order
 			elev.Direction, elev.Behavior = chooseElevDirection(elev)
 			drv.SetMotorDirection(elev.Direction)
-
-			if elev.Direction != drv.MD_Stop {
-				motorLossTimer.Reset(motorLossTimeDuration)
-			}
-
+			setMotorLossTimer(elev.Direction, motorLossTimer)
 			if elev.Behavior == c.DOOR_OPEN {
 				// If there is another hall order at his floor in a different direction but there are no other orders
 				// for this elevator, this will open the door again and clear the order
@@ -108,6 +105,14 @@ func Fsm(
 
 	}
 
+}
+
+func setMotorLossTimer(dir drv.MotorDirection, timer *time.Timer) {
+	if dir == drv.MD_Stop {
+		timer.Stop()
+	} else {
+		timer.Reset(motorLossTimeDuration)
+	}
 }
 
 func setHallLights(buttons [][]bool) {
@@ -125,7 +130,7 @@ func setCabLights(orders [][]bool) {
 	}
 }
 
-func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Timer) {
+func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Timer, motorLossTimer *time.Timer) {
 	floor := order.Floor
 	btn_type := order.Button
 	switch e.Behavior {
@@ -157,6 +162,8 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 
 		case c.MOVING:
 			drv.SetMotorDirection(e.Direction)
+			setMotorLossTimer(e.Direction, motorLossTimer)
+
 		}
 	}
 
