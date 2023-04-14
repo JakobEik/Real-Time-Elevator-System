@@ -30,7 +30,6 @@ func MasterNode(
 				if c.ElevatorID != c.MasterID {
 					continue
 				}
-
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
 				lowestCostElevator := calculateCost(globalState, order, peersOnline)
@@ -43,34 +42,28 @@ func MasterNode(
 				utils.DecodeContentToStruct(content, &state)
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
-				//e.PrintGlobalState(globalState)
-				if c.ElevatorID != c.MasterID {
-					continue
-				}
-
-				packet := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
-				ch_msgToPack <- packet
-
-				globalHallOrders := getGlobalHallOrders(globalState, peersOnline)
-				packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
-				ch_msgToPack <- packet2
-
-			case c.UPDATE_GLOBAL_STATE:
 				if c.ElevatorID == c.MasterID {
-					continue
-				}
-				content := msg.Content.([]interface{})
-				// Iterates through the array, converts each one to ElevatorState and updates the global state
-				for i, value := range content {
-					var state e.ElevatorState
-					utils.DecodeContentToStruct(value, &state)
-					globalState[i] = state
-				}
-				//e.PrintGlobalState(globalState)
+					packet := utils.CreateMessage(c.ToEveryone, globalState, c.UPDATE_GLOBAL_STATE)
+					ch_msgToPack <- packet
 
+					globalHallOrders := getGlobalHallOrders(globalState, peersOnline)
+					packet2 := utils.CreateMessage(c.ToEveryone, globalHallOrders, c.GLOBAL_HALL_ORDERS)
+					ch_msgToPack <- packet2
+				}
+
+			// SLAVE
+			case c.UPDATE_GLOBAL_STATE:
+				if c.ElevatorID != c.MasterID {
+					content := msg.Content.([]interface{})
+					// Iterates through the array, converts each one to ElevatorState and updates the global state
+					for i, value := range content {
+						var state e.ElevatorState
+						utils.DecodeContentToStruct(value, &state)
+						globalState[i] = state
+					}
+				}
 			}
 
-		// SLAVE
 		case update := <-ch_peerUpdate:
 			fmt.Println("PEER UPDATE:", update)
 			// Assign new master
@@ -97,10 +90,9 @@ func MasterNode(
 				ch_msgToPack <- hallOrdersUpdate
 
 				cabCalls := getCabCalls(globalState[elevatorID])
-
 				for _, order := range cabCalls {
-					msg := utils.CreateMessage(elevatorID, order, c.DO_ORDER)
-					ch_msgToPack <- msg
+					cabCallsUpdate := utils.CreateMessage(elevatorID, order, c.DO_ORDER)
+					ch_msgToPack <- cabCallsUpdate
 				}
 
 			}
@@ -161,10 +153,9 @@ func getMaster(elevatorIDs []int) int {
 func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
 	var lowestCostID int
 	cost := 9999
-	for _, elevID := range elevatorIDs {
-
+	for index, elevID := range elevatorIDs {
 		ElevatorCost := Cost(GlobalState[elevID], order)
-		//println("ID:", index, ", COST:", ElevatorCost)
+		println("ID:", index, ", COST:", ElevatorCost)
 		if ElevatorCost < cost {
 			cost = ElevatorCost
 			lowestCostID = elevID

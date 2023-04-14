@@ -9,31 +9,26 @@ import (
 
 func Fsm(
 	ch_executeOrder <-chan drv.ButtonEvent,
-	ch_floorArrival <-chan int,
+	ch_floorArrival chan int,
 	ch_obstruction <-chan bool,
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
 	ch_globalHallOrders <-chan [][]bool,
 	ch_wdstart chan<- bool,
 	ch_wdstop chan<- bool,
-) {
-
+	ch_peerTxEnable chan<- bool) {
+  
 	doorTimer := time.NewTimer(1)
-	<-doorTimer.C
-	//obstruct := false
+	doorTimer.Stop()
 
 	elev := InitElev(c.N_FLOORS - 1)
-	// Clears all orders and goes to first floor
 	clearAllFloors(&elev)
 	drv.SetMotorDirection(drv.MD_Down)
-	//elev.Orders[0][2] = true
-	//nextOrder(&elev)
+
 	for {
 		select {
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
-			//println("OBSTRUCT:", obstruct)
-			//println("execute")
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
 			//start watchdog timer
@@ -44,8 +39,8 @@ func Fsm(
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
 			ch_wdstart <- true // start watchdog timer
-
-			if shouldStop(&elev) {
+      
+			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
 				ch_wdstop <- true // stop watchdog timer
 				drv.SetMotorDirection(drv.MD_Stop)
@@ -65,18 +60,29 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
-			//obstruct = obstruction
-			onObstructionEvent(obstruction, elev, doorTimer)
+			if obstruction && elev.Behavior == c.DOOR_OPEN {
+				doorTimer.Stop()
+				ch_peerTxEnable <- false
+				time.Sleep(time.Millisecond * 50)
+				clearAllFloors(&elev)
+			} else {
+				doorTimer.Reset(c.DoorOpenDuration)
+				ch_peerTxEnable <- true
+			}
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
-			//println("DOOR CLOSE")
+			println("DOOR CLOSE")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
-			//println("NO MORE ORDERS?", ordersIsEmpty(e))
-			if !ordersIsEmpty(&elev) {
-				nextOrder(&elev)
-				ch_wdstart <- true // start watchdog timer
+			// Next Order
+			elev.Direction, elev.Behavior = chooseElevDirection(elev)
+			drv.SetMotorDirection(elev.Direction)
+     ch_wdstart <- true // start watchdog timer
+			if elev.Behavior == c.DOOR_OPEN {
+				// If there is another hall order at his floor in a different direction but there are no other orders
+				// for this elevator, this will open the door again and clear the order
+				ch_floorArrival <- elev.Floor
 			}
 
 		case hallOrders := <-ch_globalHallOrders:
@@ -110,7 +116,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 	btn_type := order.Button
 	switch e.Behavior {
 	case c.DOOR_OPEN:
-		if shouldClearImmediatly(e, floor, btn_type) {
+		if shouldClearImmediatly(*e, floor, btn_type) {
 			e.Orders[floor][btn_type] = false
 			doorTimer.Reset(c.DoorOpenDuration)
 		} else {
@@ -121,16 +127,15 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		e.Orders[floor][btn_type] = true
 
 	case c.IDLE:
-		if shouldClearImmediatly(e, floor, btn_type) {
+		if shouldClearImmediatly(*e, floor, btn_type) {
 			drv.SetDoorOpenLamp(true)
+			e.Behavior = c.DOOR_OPEN
 			doorTimer.Reset(c.DoorOpenDuration)
 			return
 		}
 		e.Orders[floor][btn_type] = true
-		direction, behavior := chooseElevDirection(e)
-		e.Direction = direction
-		e.Behavior = behavior
-		switch behavior {
+		e.Direction, e.Behavior = chooseElevDirection(*e)
+		switch e.Behavior {
 		case c.DOOR_OPEN:
 			drv.SetDoorOpenLamp(true)
 			doorTimer.Reset(c.DoorOpenDuration)
@@ -141,35 +146,6 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		}
 	}
 
-}
-
-func onObstructionEvent(obstruction bool, e ElevatorState, doorTimer *time.Timer) {
-	if obstruction && e.Behavior == c.DOOR_OPEN {
-		//println("OBSTRUCT")
-		doorTimer.Stop()
-		//e.Behavior = c.UNAVAILABLE
-	} else {
-		//println("OBSTR OFF")
-		doorTimer.Reset(c.DoorOpenDuration)
-		/*switch e.Behavior {
-
-		case c.DOOR_OPEN:
-			//println("RESET")
-			doorTimer.Reset(c.DoorOpenDuration)
-		}*/
-	}
-
-}
-
-func nextOrder(e *ElevatorState) {
-	direction, behavior := chooseElevDirection(e)
-	e.Direction = direction
-	e.Behavior = behavior
-	//println("BEHAVIOR NEXT ORDER:", behavior.String())
-	//println("DIRECTION:", direction)
-	if direction != drv.MD_Stop {
-		drv.SetMotorDirection(e.Direction)
-	}
 }
 
 func PrintState(elev ElevatorState) {

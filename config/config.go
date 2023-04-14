@@ -12,7 +12,8 @@ const DoorOpenDuration = time.Second * 3
 const ToEveryone = -1
 const WatchdogTimerDuration = time.Second * 5
 const NumOfRetries = 10
-const ConfirmationWaitDuration = time.Millisecond * 20
+const ConfirmationWaitDuration = time.Millisecond * 40
+const WatchdogTimerDuration = 5
 
 var ElevatorID int
 var MasterID = 0

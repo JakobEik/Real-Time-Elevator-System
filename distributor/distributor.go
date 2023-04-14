@@ -21,6 +21,9 @@ func Distributor(
 	ch_watchdogStuckBark <-chan bool,
 ) {
 
+	globalState := utils.InitGlobalState()
+	println(len(globalState))
+
 	for {
 		select {
 		// LOCAL CHANNELS
