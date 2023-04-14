@@ -44,8 +44,9 @@ func main() {
 	ch_stop := make(chan bool)
 
 	// Channels for watchdog
-	ch_watchdogAlive := make(chan bool, bufferSize)
-	ch_watchdogDead := make(chan bool, bufferSize)
+	ch_wdstart := make(chan bool)
+	ch_wdstop := make(chan bool)
+	ch_watchdogStuckBark := make(chan bool)
 
 	//drv.Init("localhost:15657", config.N_FLOORS)
 	drv.Init("localhost:"+port, config.N_FLOORS)
@@ -64,6 +65,9 @@ func main() {
 	
 	go watchdog.Watchdog(config.WatchdogTimerDuration, ch_watchdogAlive, ch_watchdogDead)
 
+	// Watchdog go routine
+	go watchdog.Watchdog(ch_wdstart, ch_wdstop, ch_watchdogStuckBark)
+
 	go d.Distributor(
 		ch_msgToDistributor,
 		ch_msgToPack,
@@ -71,6 +75,7 @@ func main() {
 		ch_globalHallOrders,
 		ch_localStateUpdated,
 		ch_buttonPress,
+		ch_watchdogStuckBark,
 	)
 
 	go d.PacketDistributor(
@@ -92,5 +97,6 @@ func main() {
 		ch_stop,
 		ch_localStateUpdated,
 		ch_globalHallOrders,
+    ch_wdstart, ch_wdstop
 		ch_peerTxEnable)
 }

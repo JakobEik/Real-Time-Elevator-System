@@ -1,19 +1,28 @@
 package watchdog
 
 import (
+	c "Project/config"
+	"fmt"
 	"time"
 )
 
-func Watchdog(sec int, ch_alive chan bool, ch_dead chan bool) {
-	wdTimer := time.NewTimer(time.Duration(sec) * time.Second)
+func Watchdog(ch_wdstart chan bool, ch_wdstop chan bool, ch_bark chan bool) {
+	wdTimer := time.NewTimer(c.WatchdogTimerDuration)
 	for {
 		select {
-		case <-ch_alive:
-			wdTimer.Reset(time.Duration(sec) * time.Second)
+		case <-ch_wdstart:
+			wdTimer.Reset(c.WatchdogTimerDuration)
+			fmt.Println("WATCHDOG RESET")
+
+		case <-ch_wdstop:
+			wdTimer.Stop()
+			fmt.Println("WATCHDOG STOPPED")
 
 		case <-wdTimer.C:
-			ch_dead <- true
-			wdTimer.Reset(time.Duration(sec) * time.Second)
+			println("WATCHDOG BARK FROM WATCHDOG")
+			ch_bark <- true
+			wdTimer.Stop()
+			panic("PANIC: HA DET")
 		}
 	}
 }

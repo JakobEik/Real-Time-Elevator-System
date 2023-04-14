@@ -14,8 +14,10 @@ func Fsm(
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
 	ch_globalHallOrders <-chan [][]bool,
+	ch_wdstart chan<- bool,
+	ch_wdstop chan<- bool,
 	ch_peerTxEnable chan<- bool) {
-
+  
 	doorTimer := time.NewTimer(1)
 	doorTimer.Stop()
 
@@ -29,13 +31,18 @@ func Fsm(
 			//fmt.Println("NEW ORDER:", order)
 			onNewOrderEvent(order, &elev, doorTimer)
 			ch_newLocalState <- elev
+			//start watchdog timer
+			ch_wdstart <- true
 
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
+			ch_wdstart <- true // start watchdog timer
+      
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
+				ch_wdstop <- true // stop watchdog timer
 				drv.SetMotorDirection(drv.MD_Stop)
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
@@ -71,6 +78,7 @@ func Fsm(
 			// Next Order
 			elev.Direction, elev.Behavior = chooseElevDirection(elev)
 			drv.SetMotorDirection(elev.Direction)
+     ch_wdstart <- true // start watchdog timer
 			if elev.Behavior == c.DOOR_OPEN {
 				// If there is another hall order at his floor in a different direction but there are no other orders
 				// for this elevator, this will open the door again and clear the order

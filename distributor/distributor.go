@@ -6,7 +6,6 @@ import (
 	e "Project/elevator"
 	"Project/utils"
 	"fmt"
-	//"Project/network/peers"
 )
 
 func Distributor(
@@ -17,7 +16,10 @@ func Distributor(
 	ch_globalHallOrders chan<- [][]bool,
 	// From Local
 	ch_localStateUpdated <-chan e.ElevatorState,
-	ch_buttonPress <-chan drv.ButtonEvent) {
+	ch_buttonPress <-chan drv.ButtonEvent,
+	// watchdog
+	ch_watchdogStuckBark <-chan bool,
+) {
 
 	globalState := utils.InitGlobalState()
 	println(len(globalState))
@@ -54,10 +56,10 @@ func Distributor(
 				var orders [][]bool
 				utils.DecodeContentToStruct(content, &orders)
 				ch_globalHallOrders <- orders
-
 			}
 
+		case <-ch_watchdogStuckBark:
+			fmt.Println("WATCHDOG BARK FROM DISTRIBUTOR")
 		}
-
 	}
 }
