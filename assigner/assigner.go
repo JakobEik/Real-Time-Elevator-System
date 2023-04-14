@@ -40,10 +40,10 @@ func MasterNode(
 				}
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
-				lowestCostElevator := calculateCost(globalState, order, peersOnline)
-				packet := utils.CreateMessage(lowestCostElevator, order, c.DO_ORDER)
+				bestScoreElevator := calculateScore(globalState, order, peersOnline)
+				packet := utils.CreateMessage(bestScoreElevator, order, c.DO_ORDER)
 				ch_msgToPack <- packet
-				fmt.Println("ORDER to elevator:", lowestCostElevator)
+				fmt.Println("ORDER to elevator:", bestScoreElevator)
 
 			case c.LOCAL_STATE_CHANGED:
 				var state e.ElevatorState
@@ -161,19 +161,19 @@ func getMaster(elevatorIDs []int) int {
 
 }
 
-func calculateCost(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
-	var lowestCostID int
-	cost := 9999
+func calculateScore(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
+	var bestElevatorID int
+	score := 9999
 	for index, elevID := range elevatorIDs {
-		ElevatorCost := Cost(GlobalState[elevID], order)
-		println("ID:", index, ", COST:", ElevatorCost)
-		if ElevatorCost < cost {
-			cost = ElevatorCost
-			lowestCostID = elevID
+		ElevatorScore := Score(GlobalState[elevID], order)
+		println("ID:", index, ", SCORE:", ElevatorScore)
+		if ElevatorScore > score {
+			score = ElevatorScore
+			bestElevatorID = elevID
 		}
 	}
 
-	return lowestCostID
+	return bestElevatorID
 }
 
 func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
