@@ -7,8 +7,23 @@ import (
 	"math"
 )
 
+func getBestElevatorForOrder(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
+	var bestElevatorID int
+	bestScore := -9999
+	for _, elevID := range elevatorIDs {
+		ElevatorScore := score(GlobalState[elevID], order)
+		//println("ID:", elevID, ", SCORE:", ElevatorScore)
+		if ElevatorScore > bestScore {
+			bestScore = ElevatorScore
+			bestElevatorID = elevID
+		}
+	}
+
+	return bestElevatorID
+}
+
 // Nearest Car Algorithm
-func Score(elev e.ElevatorState, order drv.ButtonEvent) int {
+func score(elev e.ElevatorState, order drv.ButtonEvent) int {
 
 	ordBtn := order.Button
 	score := 0
@@ -45,7 +60,9 @@ func Score(elev e.ElevatorState, order drv.ButtonEvent) int {
 			score = 0
 		}
 	}
-	return score - orderCount(elev)
+
+	return score - orderCount(elev)/2
+
 }
 
 func orderCount(e e.ElevatorState) int {

@@ -40,10 +40,10 @@ func MasterNode(
 				}
 				var order drv.ButtonEvent
 				utils.DecodeContentToStruct(content, &order)
-				bestScoreElevator := calculateScore(globalState, order, peersOnline)
+				bestScoreElevator := getBestElevatorForOrder(globalState, order, peersOnline)
 				packet := utils.CreateMessage(bestScoreElevator, order, c.DO_ORDER)
 				ch_msgToPack <- packet
-				fmt.Println("ORDER to elevator:", bestScoreElevator)
+				//fmt.Println("ORDER to elevator:", bestScoreElevator)
 
 			case c.LOCAL_STATE_CHANGED:
 				var state e.ElevatorState
@@ -139,7 +139,7 @@ func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMes
 			if orders[floor][btn] == true {
 				order := drv.ButtonEvent{Floor: floor, Button: drv.ButtonType(btn)}
 				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
-				fmt.Println("DISTRIBUTE ORDER:", order)
+				//fmt.Println("DISTRIBUTE ORDER:", order)
 				ch_msgToPack <- msg
 			}
 		}
@@ -161,20 +161,6 @@ func getMaster(elevatorIDs []int) int {
 
 }
 
-func calculateScore(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
-	var bestElevatorID int
-	score := 9999
-	for index, elevID := range elevatorIDs {
-		ElevatorScore := Score(GlobalState[elevID], order)
-		println("ID:", index, ", SCORE:", ElevatorScore)
-		if ElevatorScore > score {
-			score = ElevatorScore
-			bestElevatorID = elevID
-		}
-	}
-
-	return bestElevatorID
-}
 
 func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
 	buttons := e.InitElev(0).Orders
