@@ -60,7 +60,9 @@ func score(elev e.ElevatorState, order drv.ButtonEvent) int {
 			score = 0
 		}
 	}
+
 	return score - orderCount(elev)/2
+
 }
 
 func orderCount(e e.ElevatorState) int {

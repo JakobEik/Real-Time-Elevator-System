@@ -161,6 +161,7 @@ func getMaster(elevatorIDs []int) int {
 
 }
 
+
 func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
 	buttons := e.InitElev(0).Orders
 	for _, ID := range onlineElevs {
