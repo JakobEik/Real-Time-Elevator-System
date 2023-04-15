@@ -4,7 +4,6 @@ import (
 	c "Project/config"
 	drv "Project/driver"
 	e "Project/elevator"
-	"Project/failroutine"
 	p "Project/network/peers"
 	"Project/utils"
 	"Project/watchdog"
@@ -132,7 +131,6 @@ func lostPeersUpdate(lostPeers []string, globalState []e.ElevatorState, ch_msgTo
 	}
 
 }
-
 
 func newPeerUpdate(
 	newPeer string,

@@ -69,6 +69,7 @@ func Fsm(
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
 				drv.SetDoorOpenLamp(true)
+				println("DOOR OPEN :", drv.GetDoorOpenLamp())
 				doorTimer.Reset(doorOpenDuration)
 				//println("set door timer")
 			}
@@ -96,6 +97,7 @@ func Fsm(
 		case <-doorTimer.C:
 			//println("DOOR TIMER")
 			drv.SetDoorOpenLamp(false)
+			println("DOOR OPEN :", drv.GetDoorOpenLamp())
 			elev.Behavior = c.IDLE
 			// Next Order
 			elev.Direction, elev.Behavior = chooseElevDirection(elev)
@@ -156,6 +158,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 	case c.IDLE:
 		if shouldClearImmediatly(*e, floor, btn_type) {
 			drv.SetDoorOpenLamp(true)
+			println("DOOR OPEN :", drv.GetDoorOpenLamp())
 			e.Behavior = c.DOOR_OPEN
 			doorTimer.Reset(doorOpenDuration)
 			return
@@ -165,6 +168,7 @@ func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Ti
 		switch e.Behavior {
 		case c.DOOR_OPEN:
 			drv.SetDoorOpenLamp(true)
+			println("DOOR OPEN :", drv.GetDoorOpenLamp())
 			doorTimer.Reset(doorOpenDuration)
 			clearAtCurrentFloor(e)
 

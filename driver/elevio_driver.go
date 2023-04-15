@@ -133,6 +133,11 @@ func PollObstructionSwitch(receiver chan<- bool) {
 	}
 }
 
+func GetDoorOpenLamp() bool {
+	a := read([4]byte{4, 0, 0, 0})
+	return toBool(a[1])
+}
+
 func GetButton(button ButtonType, floor int) bool {
 	a := read([4]byte{6, byte(button), byte(floor), 0})
 	return toBool(a[1])

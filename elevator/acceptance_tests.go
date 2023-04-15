@@ -34,6 +34,7 @@ func stateIsConsistent(state ElevatorState) {
 	if state.Behavior == c.DOOR_OPEN && state.Direction != driver.MD_Stop {
 		panic("DOOR IS OPEN BUT DIRECTION IS NOT STOP")
 	}
+
 }
 
 func floorInValidRange(state ElevatorState) {
