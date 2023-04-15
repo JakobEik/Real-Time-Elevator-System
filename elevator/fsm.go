@@ -54,6 +54,9 @@ func Fsm(
 			motorLossTimer.Reset(motorLossTimeDuration)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
+			ch_failure <- false
+			setCabLights(elev.Orders)
+			setCabLights(elev.Orders)
 
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
