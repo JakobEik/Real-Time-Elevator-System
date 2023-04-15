@@ -6,7 +6,6 @@ import (
 	e "Project/elevator"
 	"Project/utils"
 	"Project/watchdog"
-	"os/exec"
 )
 
 func Distributor(
@@ -66,7 +65,6 @@ func Distributor(
 
 		case failure := <-ch_failure:
 			ch_peerTxEnable <- !failure
-			exec.Command("cmd", "/C", "start", "powershell", "go", "run", "main.go 9999 0").Run()
 		}
 	}
 }

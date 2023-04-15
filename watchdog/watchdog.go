@@ -1,12 +1,14 @@
 package watchdog
 
 import (
+	"Project/failroutine"
 	"time"
 )
 
 const watchdogTimerDuration = time.Millisecond * 500
 
 func Watchdog(ch_bark chan<- bool, ch_pet <-chan bool, moduleName string) {
+
 	wdTimer := time.NewTicker(watchdogTimerDuration)
 	ch_bark <- true
 	pet := false
@@ -16,7 +18,8 @@ func Watchdog(ch_bark chan<- bool, ch_pet <-chan bool, moduleName string) {
 			pet = value
 		case <-wdTimer.C:
 			if pet == false {
-				panic("Watchdog timer limit reached for " + moduleName)
+				// panic("Watchdog timer limit reached for " + moduleName)
+				failroutine.FailRoutine()
 			}
 			pet = false
 			ch_bark <- true

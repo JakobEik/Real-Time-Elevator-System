@@ -4,6 +4,7 @@ import (
 	"Project/config"
 	e "Project/elevator"
 	"fmt"
+
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -43,4 +44,3 @@ func DecodeContentToStruct(data interface{}, correctStruct interface{}) {
 	}
 
 }
-

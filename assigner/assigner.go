@@ -4,6 +4,7 @@ import (
 	c "Project/config"
 	drv "Project/driver"
 	e "Project/elevator"
+	"Project/failroutine"
 	p "Project/network/peers"
 	"Project/utils"
 	"Project/watchdog"
@@ -149,7 +150,8 @@ func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMes
 // getMaster returns the elevator with the lowest ID
 func getMaster(elevatorIDs []int) int {
 	if len(elevatorIDs) == 0 {
-		panic("ERROR")
+		//panic("ERROR")
+		failroutine.FailRoutine()
 	}
 	masterID := elevatorIDs[0]
 	for _, elev := range elevatorIDs[1:] {
@@ -160,7 +162,6 @@ func getMaster(elevatorIDs []int) int {
 	return masterID
 
 }
-
 
 func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
 	buttons := e.InitElev(0).Orders

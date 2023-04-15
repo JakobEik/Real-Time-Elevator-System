@@ -3,6 +3,7 @@ package elevator
 import (
 	c "Project/config"
 	drv "Project/driver"
+	"Project/failroutine"
 	"Project/watchdog"
 	"fmt"
 	"time"
@@ -45,6 +46,7 @@ func Fsm(
 		case <-motorLossTimer.C:
 			ch_failure <- true
 			println("======================= MOTOR LOSS ==============================")
+			failroutine.FailRoutine()
 		case order := <-ch_executeOrder:
 			//fmt.Println("NEW ORDER:", order)
 			onNewOrderEvent(order, &elev, doorTimer, motorLossTimer)
