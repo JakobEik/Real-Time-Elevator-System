@@ -4,6 +4,7 @@ import (
 	c "Project/config"
 	drv "Project/driver"
 	e "Project/elevator"
+	"Project/failroutine"
 	p "Project/network/peers"
 	"Project/utils"
 	"Project/watchdog"
@@ -132,14 +133,13 @@ func lostPeersUpdate(lostPeers []string, globalState []e.ElevatorState, ch_msgTo
 
 }
 
+
 func newPeerUpdate(
 	newPeer string,
 	globalState []e.ElevatorState,
 	ch_msgToPack chan<- c.NetworkMessage,
 	peersOnline []int) {
-
 	if len(newPeer) > 0 {
-
 		elevatorID, _ := strconv.Atoi(newPeer)
 		stateUpdate := utils.CreateMessage(elevatorID, globalState, c.UPDATE_GLOBAL_STATE)
 		ch_msgToPack <- stateUpdate
