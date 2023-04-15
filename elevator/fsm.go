@@ -98,9 +98,9 @@ func Fsm(
 				// for this elevator, this will open the door again and clear the order
 				ch_floorArrival <- elev.Floor
 			}
+			//ch_newLocalState <- elev
 		}
 		//PrintState(elev)
-
 		setCabLights(elev.Orders)
 
 	}
