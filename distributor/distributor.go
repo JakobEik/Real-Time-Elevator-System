@@ -47,18 +47,16 @@ func Distributor(
 			ch_msgToPack <- msg
 
 		// NETWORK MESSAGES
-		case msg := <-ch_msgToDistributor:
+		case m := <-ch_msgToDistributor:
 			//fmt.Println("DISTRIBUTOR RECEIVE:", msg.Type)
-			content := msg.Content
+			msg := utils.DecodeMessage(m)
 			switch msg.Type {
 			case c.DO_ORDER:
-				var order drv.ButtonEvent
-				utils.DecodeContentToStruct(content, &order)
+				order := msg.Content.(drv.ButtonEvent)
 				ch_executeOrder <- order
 				//fmt.Println("EXECUTE ORDER:", order)
 			case c.HALL_LIGHTS_UPDATE:
-				var orders [][]bool
-				utils.DecodeContentToStruct(content, &orders)
+				orders := msg.Content.([][]bool)
 				ch_globalHallOrders <- orders
 			}
 

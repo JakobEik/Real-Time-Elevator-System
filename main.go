@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Project/assigner"
+	"Project/assigner2"
 	"Project/config"
 	d "Project/distributor"
 	drv "Project/driver"
@@ -75,7 +75,7 @@ func main() {
 		ch_msgToAssigner,
 		ch_msgToDistributor)
 
-	go assigner.MasterNode(
+	go assigner2.Assigner(
 		ch_peerUpdate,
 		ch_msgToAssigner,
 		ch_msgToPack)

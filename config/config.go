@@ -44,6 +44,7 @@ const (
 	MSG_RECEIVED
 	LOCAL_STATE_CHANGED
 	HALL_LIGHTS_UPDATE
+	NEW_MASTER
 )
 
 func (t MessageType) String() string {
@@ -60,6 +61,8 @@ func (t MessageType) String() string {
 		return "LOCAL_STATE_CHANGED"
 	case HALL_LIGHTS_UPDATE:
 		return "HALL_LIGHTS_UPDATE"
+	case NEW_MASTER:
+		return "NEW ORDER"
 	default:
 		return fmt.Sprintf("%d", int(t))
 	}

@@ -12,7 +12,7 @@ import (
 	//drv "Project/driver"
 )
 
-func MasterNode(
+func Assigner(
 	ch_peerUpdate chan p.PeerUpdate,
 	ch_msgToAssigner <-chan c.NetworkMessage,
 	ch_msgToPack chan<- c.NetworkMessage) {
@@ -80,6 +80,10 @@ func MasterNode(
 
 		case update := <-ch_peerUpdate:
 			fmt.Println("PEER UPDATE:", update)
+			// Assign new master
+			peersOnline = stringArrayToIntArray(update.Peers)
+			c.MasterID = getMaster(peersOnline)
+			println("MASTER:", c.MasterID)
 			if c.ElevatorID == c.MasterID {
 				// Distribute orders from lost peers if there are any
 				if len(update.Lost) > 0 {
@@ -106,10 +110,6 @@ func MasterNode(
 
 				}
 			}
-
-			// Assign new master
-			peersOnline = stringArrayToIntArray(update.Peers)
-			c.MasterID = getMaster(peersOnline)
 
 		}
 
