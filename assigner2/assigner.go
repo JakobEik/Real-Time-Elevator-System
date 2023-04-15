@@ -12,7 +12,7 @@ import (
 	//drv "Project/driver"
 )
 
-func MasterNode(
+func Assigner(
 	ch_peerUpdate chan p.PeerUpdate,
 	ch_msgToAssigner <-chan c.NetworkMessage,
 	ch_msgToPack chan<- c.NetworkMessage) {

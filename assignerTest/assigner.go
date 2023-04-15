@@ -1,4 +1,4 @@
-package assigner
+package assignerTest
 
 import (
 	c "Project/config"
