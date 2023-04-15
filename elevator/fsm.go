@@ -33,6 +33,7 @@ func Fsm(
 	elev := InitElev(c.N_FLOORS - 1)
 	clearAllFloors(&elev)
 	drv.SetMotorDirection(drv.MD_Down)
+	elev.Direction = drv.MD_Down
 	motorLossTimer.Stop()
 
 	for {
@@ -56,10 +57,14 @@ func Fsm(
 			motorLossTimer.Reset(motorLossTimeDuration)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
+			ch_failure <- false
+			setCabLights(elev.Orders)
+			setCabLights(elev.Orders)
 
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
 				drv.SetMotorDirection(drv.MD_Stop)
+				elev.Direction = drv.MD_Stop
 				setMotorLossTimer(drv.MD_Stop, motorLossTimer)
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
@@ -81,6 +86,7 @@ func Fsm(
 				doorTimer.Stop()
 				time.Sleep(time.Millisecond * 50)
 				clearAllFloors(&elev)
+				ch_failure <- true
 			} else {
 				doorTimer.Reset(doorOpenDuration)
 				ch_failure <- false
@@ -100,9 +106,9 @@ func Fsm(
 				// for this elevator, this will open the door again and clear the order
 				ch_floorArrival <- elev.Floor
 			}
+			ch_newLocalState <- elev
 		}
 		//PrintState(elev)
-
 		setCabLights(elev.Orders)
 
 	}
