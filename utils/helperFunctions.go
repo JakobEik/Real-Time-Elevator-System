@@ -1,27 +1,63 @@
 package utils
 
 import (
-	"Project/config"
+	c "Project/config"
+	drv "Project/driver"
 	e "Project/elevator"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 )
 
 func InitGlobalState() []e.ElevatorState {
-	globalState := make([]e.ElevatorState, config.N_ELEVATORS)
-	for i := 0; i < config.N_ELEVATORS; i++ {
+	globalState := make([]e.ElevatorState, c.N_ELEVATORS)
+	for i := 0; i < c.N_ELEVATORS; i++ {
 		globalState[i] = e.InitElev(0)
 	}
 	return globalState
 }
 
-func CreateMessage(receiverID int, content any, msgType config.MessageType) config.NetworkMessage {
-	msg := config.NetworkMessage{
-		SenderID:   config.ElevatorID,
+func CreateMessage(receiverID int, content any, msgType c.MessageType) c.NetworkMessage {
+	msg := c.NetworkMessage{
+		SenderID:   c.ElevatorID,
 		ReceiverID: receiverID,
 		Content:    content,
 		Type:       msgType}
 
+	return msg
+}
+
+func DecodeMessage(oldMsg c.NetworkMessage) c.NetworkMessage {
+	msg := oldMsg
+	switch msg.Type {
+	case c.DO_ORDER:
+		fallthrough
+	case c.NEW_ORDER:
+		var order drv.ButtonEvent
+		DecodeContentToStruct(msg.Content, &order)
+		msg.Content = order
+	case c.LOCAL_STATE_CHANGED:
+		var state e.ElevatorState
+		DecodeContentToStruct(msg.Content, &state)
+		msg.Content = state
+	case c.HALL_LIGHTS_UPDATE:
+		var orders [][]bool
+		DecodeContentToStruct(msg.Content, &orders)
+		msg.Content = orders
+	case c.NEW_MASTER:
+		fallthrough
+	case c.UPDATE_GLOBAL_STATE:
+		globalState := make([]e.ElevatorState, c.N_ELEVATORS)
+		content := msg.Content.([]interface{})
+		// Iterates through the array, converts each one to ElevatorState and updates the global state
+		for i, value := range content {
+			var state e.ElevatorState
+			DecodeContentToStruct(value, &state)
+			globalState[i] = state
+		}
+		msg.Content = globalState
+	default:
+		panic("MESSAGE TYPE NOT IMPLEMENTED : " + msg.Type.String())
+	}
 	return msg
 }
 

@@ -48,6 +48,8 @@ func PacketDistributor(
 			if acceptPacket(packet) {
 				switch packet.Msg.Type {
 				// TO ASSIGNER
+				case c.NEW_MASTER:
+					fallthrough
 				case c.LOCAL_STATE_CHANGED:
 					fallthrough
 				case c.UPDATE_GLOBAL_STATE:

@@ -75,7 +75,7 @@ func main() {
 		ch_msgToAssigner,
 		ch_msgToDistributor)
 
-	go assigner.MasterNode(
+	go assigner.Assigner(
 		ch_peerUpdate,
 		ch_msgToAssigner,
 		ch_msgToPack)
