@@ -82,6 +82,7 @@ func Fsm(
 				doorTimer.Stop()
 				time.Sleep(time.Millisecond * 50)
 				clearAllFloors(&elev)
+				ch_failure <- true
 			} else {
 				doorTimer.Reset(doorOpenDuration)
 				ch_failure <- false

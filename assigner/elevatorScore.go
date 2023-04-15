@@ -12,11 +12,11 @@ const TRAVEL_TIME = 3
 
 func getBestElevatorForOrder(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
 	var bestElevatorID int
-	bestScore := 9999
+	bestScore := -9999
 	for _, elevID := range elevatorIDs {
 		ElevatorScore := score(GlobalState[elevID], order)
 		//println("ID:", elevID, ", SCORE:", ElevatorScore)
-		if ElevatorScore < bestScore {
+		if ElevatorScore > bestScore {
 			bestScore = ElevatorScore
 			bestElevatorID = elevID
 		}
@@ -26,7 +26,7 @@ func getBestElevatorForOrder(GlobalState []e.ElevatorState, order drv.ButtonEven
 }
 
 // Nearest Car Algorithm
-func score1(elev e.ElevatorState, order drv.ButtonEvent) int {
+func score(elev e.ElevatorState, order drv.ButtonEvent) int {
 
 	ordBtn := order.Button
 	score := 0
@@ -116,7 +116,7 @@ func chooseElevDirection(e e.ElevatorState) (drv.MotorDirection, c.Behavior) {
 	}
 }
 
-func score(e_old e.ElevatorState, b drv.ButtonEvent) int {
+func score1(e_old e.ElevatorState, b drv.ButtonEvent) int {
 	e := e_old
 	floor := b.Floor
 	button := b.Button
