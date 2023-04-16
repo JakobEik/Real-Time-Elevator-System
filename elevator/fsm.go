@@ -17,12 +17,12 @@ func Fsm(
 	ch_floorArrival chan int,
 	ch_obstruction <-chan bool,
 	ch_stop <-chan bool,
-	ch_newLocalState chan<- ElevatorState,
-	ch_globalHallOrders <-chan [][]bool,
-	ch_failure chan<- bool, 
+	ch_newLocalState chan<- c.ElevatorState,
+	ch_hallLights <-chan [][]bool,
+	ch_unavailable chan<- bool,
 	ch_offNetwork <-chan bool) {
 
-	offNetwork := false	
+	offNetwork := false
 
 	ch_bark := make(chan bool)
 	ch_pet := make(chan bool)
@@ -33,44 +33,78 @@ func Fsm(
 	motorLossTimer := time.NewTimer(1)
 	motorLossTimer.Stop()
 
-	elev := InitElev(c.N_FLOORS - 1)
-	clearAllFloors(&elev)
+	elev := InitElev(c.N_FLOORS)
+	elev = clearAllFloors(elev)
 	drv.SetMotorDirection(drv.MD_Down)
 	elev.Direction = drv.MD_Down
 	motorLossTimer.Stop()
 
 	for {
 		select {
-		case value :=  <- ch_offNetwork:
-			offNetwork = value	
+		case value := <-ch_offNetwork:
+			offNetwork = value
 			println("OFF NETTWORK : ", value)
 		case <-ch_bark:
 			ch_pet <- true
-		case hallOrders := <-ch_globalHallOrders:
+		case hallOrders := <-ch_hallLights:
 			setHallLights(hallOrders)
 		case <-motorLossTimer.C:
-			ch_failure <- true
+			ch_unavailable <- true
 			println("======================= MOTOR LOSS ==============================")
 			failroutine.FailRoutine()
+
 		case order := <-ch_executeOrder:
-			//fmt.Println("NEW ORDER:", order)
-			onNewOrderEvent(order, &elev, doorTimer, motorLossTimer)
+			floor := order.Floor
+			btn_type := order.Button
+			switch elev.Behavior {
+			case c.DOOR_OPEN:
+				if shouldClearImmediatly(elev, floor, btn_type) {
+					elev.Orders[floor][btn_type] = false
+					doorTimer.Reset(doorOpenDuration)
+				} else {
+					elev.Orders[floor][btn_type] = true
+				}
+
+			case c.MOVING:
+				elev.Orders[floor][btn_type] = true
+
+			case c.IDLE:
+				println("3")
+				if shouldClearImmediatly(elev, floor, btn_type) {
+					drv.SetDoorOpenLamp(true)
+					elev.Behavior = c.DOOR_OPEN
+					doorTimer.Reset(doorOpenDuration)
+
+				}
+				elev.Orders[floor][btn_type] = true
+				elev.Direction, elev.Behavior = chooseElevDirection(elev)
+				switch elev.Behavior {
+				case c.DOOR_OPEN:
+					drv.SetDoorOpenLamp(true)
+					doorTimer.Reset(doorOpenDuration)
+					elev = clearAtCurrentFloor(elev)
+
+				case c.MOVING:
+					drv.SetMotorDirection(elev.Direction)
+					setMotorLossTimer(elev.Direction, motorLossTimer)
+
+				}
+			}
 			ch_newLocalState <- elev
 		case floor := <-ch_floorArrival:
 			//println("floor:", floor)
 			motorLossTimer.Reset(motorLossTimeDuration)
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
-			ch_failure <- false
+			ch_unavailable <- false
 			//setCabLights(elev.Orders)
-
 
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
 				drv.SetMotorDirection(drv.MD_Stop)
 				setMotorLossTimer(drv.MD_Stop, motorLossTimer)
 				elev.Behavior = c.DOOR_OPEN
-				clearAtCurrentFloor(&elev)
+				elev = clearAtCurrentFloor(elev)
 				drv.SetDoorOpenLamp(true)
 				doorTimer.Reset(doorOpenDuration)
 				//println("set door timer")
@@ -78,26 +112,22 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case <-ch_stop:
-			//println("STOP")
-			clearAllFloors(&elev)
-			firstFloor := drv.ButtonEvent{Floor: 0, Button: drv.BT_Cab}
-			onNewOrderEvent(firstFloor, &elev, doorTimer, motorLossTimer)
+			drv.SetMotorDirection(drv.MD_Stop)
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
 			if obstruction && elev.Behavior == c.DOOR_OPEN {
 				doorTimer.Stop()
 				time.Sleep(time.Millisecond * 50)
-				clearAllFloors(&elev)
-				ch_failure <- true
+				elev = clearAllFloors(elev)
+				ch_unavailable <- true
 			} else {
 				doorTimer.Reset(doorOpenDuration)
-				ch_failure <- false
+				ch_unavailable <- false
 			}
 			ch_newLocalState <- elev
 
 		case <-doorTimer.C:
-			//println("DOOR TIMER")
 			drv.SetDoorOpenLamp(false)
 			elev.Behavior = c.IDLE
 			// Next Order
@@ -111,11 +141,11 @@ func Fsm(
 			}
 			ch_newLocalState <- elev
 		}
-		//PrintState(elev)
 		setCabLights(elev.Orders)
+		// Hall lights are usually set by master.
+		// If this elevator goes offline, it will set its own hall lights
 		if offNetwork {
 			setHallLights(elev.Orders)
-			println("SLAVE LIGGST")
 		}
 
 	}
@@ -145,46 +175,7 @@ func setCabLights(orders [][]bool) {
 	}
 }
 
-func onNewOrderEvent(order drv.ButtonEvent, e *ElevatorState, doorTimer *time.Timer, motorLossTimer *time.Timer) {
-	floor := order.Floor
-	btn_type := order.Button
-	switch e.Behavior {
-	case c.DOOR_OPEN:
-		if shouldClearImmediatly(*e, floor, btn_type) {
-			e.Orders[floor][btn_type] = false
-			doorTimer.Reset(doorOpenDuration)
-		} else {
-			e.Orders[floor][btn_type] = true
-		}
-
-	case c.MOVING:
-		e.Orders[floor][btn_type] = true
-
-	case c.IDLE:
-		if shouldClearImmediatly(*e, floor, btn_type) {
-			drv.SetDoorOpenLamp(true)
-			e.Behavior = c.DOOR_OPEN
-			doorTimer.Reset(doorOpenDuration)
-			return
-		}
-		e.Orders[floor][btn_type] = true
-		e.Direction, e.Behavior = chooseElevDirection(*e)
-		switch e.Behavior {
-		case c.DOOR_OPEN:
-			drv.SetDoorOpenLamp(true)
-			doorTimer.Reset(doorOpenDuration)
-			clearAtCurrentFloor(e)
-
-		case c.MOVING:
-			drv.SetMotorDirection(e.Direction)
-			setMotorLossTimer(e.Direction, motorLossTimer)
-
-		}
-	}
-
-}
-
-func PrintState(elev ElevatorState) {
+func PrintState(elev c.ElevatorState) {
 	println("  UP   DOWN  CAB")
 	fmt.Println(elev.Orders[3])
 	fmt.Println(elev.Orders[2])
@@ -195,7 +186,7 @@ func PrintState(elev ElevatorState) {
 	println()
 }
 
-func PrintGlobalState(elevs []ElevatorState) {
+func PrintGlobalState(elevs []c.ElevatorState) {
 	for i, elev := range elevs {
 		print("  UP   DOWN  CAB")
 		println("ELEVATOR:", i)

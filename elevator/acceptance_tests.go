@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-func AcceptanceTests(state ElevatorState) {
+func AcceptanceTests(state c.ElevatorState) {
 	stateIsConsistent(state)
 	floorInValidRange(state)
 	directionIsValid(state)
@@ -16,7 +16,7 @@ func AcceptanceTests(state ElevatorState) {
 	ordersAreValid(state)
 }
 
-func stateIsConsistent(state ElevatorState) {
+func stateIsConsistent(state c.ElevatorState) {
 	/*if state.Behavior == c.DOOR_OPEN && state.Direction != driver.MD_Stop {
 		fmt.Println(state)
 		fmt.Println("MOTOR SHOULD BE STOPPED WHEN DOOR IS OPEN")
@@ -43,7 +43,7 @@ func stateIsConsistent(state ElevatorState) {
 
 }
 
-func floorInValidRange(state ElevatorState) {
+func floorInValidRange(state c.ElevatorState) {
 	if state.Floor < 0 || state.Floor > c.N_FLOORS {
 		floor := strconv.Itoa(state.Floor)
 		fmt.Println("FLOOR OUTSIDE OF VALID RANGE : " + floor)
@@ -51,7 +51,7 @@ func floorInValidRange(state ElevatorState) {
 	}
 }
 
-func directionIsValid(state ElevatorState) {
+func directionIsValid(state c.ElevatorState) {
 	if state.Direction != driver.MD_Up && state.Direction != driver.MD_Down && state.Direction != driver.MD_Stop {
 		dir := strconv.Itoa(int(state.Direction))
 		fmt.Println("DIRECTION IS NOT VALID : " + dir)
@@ -59,7 +59,7 @@ func directionIsValid(state ElevatorState) {
 	}
 }
 
-func behaviorIsValid(state ElevatorState) {
+func behaviorIsValid(state c.ElevatorState) {
 	if state.Behavior != c.IDLE && state.Behavior != c.MOVING && state.Behavior != c.DOOR_OPEN {
 		b := strconv.Itoa(int(state.Behavior))
 		fmt.Println("BEHAVIOR IS NOT VALID : " + b)
@@ -67,7 +67,7 @@ func behaviorIsValid(state ElevatorState) {
 	}
 }
 
-func ordersAreValid(state ElevatorState) {
+func ordersAreValid(state c.ElevatorState) {
 	for _, floorOrders := range state.Orders {
 		if len(floorOrders) != c.N_BUTTONS {
 			fmt.Println(state.Orders)

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"Project/assigner"
+	assigner2 "Project/assigner2"
 	"Project/config"
 	d "Project/distributor"
 	drv "Project/driver"
@@ -15,7 +15,6 @@ import (
 const bufferSize = 512
 
 func main() {
-
 	port := os.Args[1]
 	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
 	ElevatorStrID := os.Args[2]
@@ -29,10 +28,12 @@ func main() {
 	ch_packetFromNetwork := make(chan d.Packet, bufferSize)
 
 	// channels between distributor and FSM
-	ch_localStateUpdated := make(chan e.ElevatorState, bufferSize)
+	ch_localStateUpdated := make(chan config.ElevatorState, bufferSize)
 	ch_executeOrder := make(chan drv.ButtonEvent, bufferSize)
-	ch_globalHallOrders := make(chan [][]bool, bufferSize)
-	ch_failure := make(chan bool, bufferSize)
+	ch_hallLights := make(chan [][]bool, bufferSize)
+	ch_unavailable := make(chan bool, bufferSize)
+
+	// Channels between Assigner and FSM
 	ch_offNetwork := make(chan bool, bufferSize)
 
 	// Channels for Packet Distributor
@@ -68,10 +69,10 @@ func main() {
 		ch_msgToDistributor,
 		ch_msgToPack,
 		ch_executeOrder,
-		ch_globalHallOrders,
+		ch_hallLights,
 		ch_localStateUpdated,
 		ch_buttonPress,
-		ch_failure,
+		ch_unavailable,
 		ch_peerTxEnable)
 
 	go d.PacketDistributor(
@@ -81,7 +82,7 @@ func main() {
 		ch_msgToAssigner,
 		ch_msgToDistributor)
 
-	go assigner.Assigner(
+	go assigner2.Assigner(
 		ch_peerUpdate,
 		ch_msgToAssigner,
 		ch_msgToPack,
@@ -93,24 +94,10 @@ func main() {
 		ch_obstruction,
 		ch_stop,
 		ch_localStateUpdated,
-		ch_globalHallOrders,
-		ch_failure,
+		ch_hallLights,
+		ch_unavailable,
 		ch_offNetwork)
-}
+	println("EXIT PROGRAM")
+	//failroutine.FailRoutine()
 
-// Error function
-// func failRoutine(port string, id string, ch_failure <-chan bool) {
-// 	// sigchan := make(chan os.Signal, 10)
-// 	// signal.Notify(sigchan, os.Interrupt)
-// 	// <-sigchan
-// 	// drv.SetMotorDirection(drv.MD_Stop)
-// 	// fmt.Println("CTRL-C pressed, shutting down...")
-// 	<-ch_failure
-// 	drv.SetMotorDirection(drv.MD_Stop)
-// 	err := exec.Command("cmd", "/C", "start", "powershell", "go", "run", fmt.Sprintf("main.go %s %s", port, id)).Run()
-// 	if err != nil {
-// 		fmt.Println("Unable to reboot process, crashing...")
-// 	}
-// 	fmt.Println("Program killed !")
-// 	os.Exit(0)
-// }
+}

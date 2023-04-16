@@ -13,7 +13,7 @@ Main requirements
  - Similarly for a cab call (for telling the elevator what floor you want to exit at; front 4 buttons on the control panel), but only the elevator at that specific workspace should take the order
 
 ### No calls are lost
- - Failure states are anything that prevents the elevator from communicating with other elevators or servicing calls
+ - Failure globalState are anything that prevents the elevator from communicating with other elevators or servicing calls
    - This includes losing network connection entirely, software that crashes, doors that won't close, and losing power - both to the elevator motor and the machine that controls the elevator
    - Network packet loss is not a failure, and can occur at any time
    - An elevator entering the network is not a failure

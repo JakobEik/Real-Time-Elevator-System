@@ -21,17 +21,16 @@ func isElevatorOffline(ID int, peersOnline []int) bool {
 
 // Checks if the elevator is new on the network or not
 func isNewElevator(ID int, update peers.PeerUpdate) bool {
-	peersOnline := stringArrayToIntArray(update.Peers)
 	if len(update.New) > 0 {
 		newElevID, _ := strconv.Atoi(update.New)
 		if ID == newElevID {
-			return false
+			return true
 		}
 	}
-	return !isElevatorOffline(ID, peersOnline)
+	return false
 }
 
-func getCabCalls(e e.ElevatorState) []drv.ButtonEvent {
+func getCabCalls(e c.ElevatorState) []drv.ButtonEvent {
 	orders := e.Orders
 	var cabColumn []bool
 	var cabCalls []drv.ButtonEvent
@@ -49,7 +48,7 @@ func getCabCalls(e e.ElevatorState) []drv.ButtonEvent {
 
 // updateGlobalState sets the hall orders to false for the lost peers in the global state
 // after the orders are distributed
-func updateGlobalState(globalState []e.ElevatorState, lostPeers []int) []e.ElevatorState {
+func updateGlobalState(globalState []c.ElevatorState, lostPeers []int) []c.ElevatorState {
 	elevators := filterElevator(globalState, lostPeers)
 	for _, elevator := range elevators {
 		elevator.Orders = removeHallOrders(elevator.Orders)
@@ -76,7 +75,7 @@ func makeMessagesFromOrders(orders [][]bool) []c.NetworkMessage {
 }
 
 // getCombinedOrders Returns the combined orders for the input elevators
-func getCombinedOrders(elevators []e.ElevatorState) [][]bool {
+func getCombinedOrders(elevators []c.ElevatorState) [][]bool {
 	if len(elevators) == 0 {
 		return nil
 	}
@@ -91,15 +90,15 @@ func getCombinedOrders(elevators []e.ElevatorState) [][]bool {
 	return orders
 }
 
-func filterElevator(globalState []e.ElevatorState, elevator_IDs []int) []e.ElevatorState {
-	var result []e.ElevatorState
+func filterElevator(globalState []c.ElevatorState, elevator_IDs []int) []c.ElevatorState {
+	var result []c.ElevatorState
 	for _, ID := range elevator_IDs {
 		result = append(result, globalState[ID])
 	}
 	return result
 }
 
-func getHallOrders(globalState []e.ElevatorState, IDs []int) [][]bool {
+func getHallOrders(globalState []c.ElevatorState, IDs []int) [][]bool {
 	elevators := filterElevator(globalState, IDs)
 	globalOrders := getCombinedOrders(elevators)
 	// Sets all Cab orders to false since these are not used

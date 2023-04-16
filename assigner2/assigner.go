@@ -3,7 +3,6 @@ package assigner2
 import (
 	c "Project/config"
 	drv "Project/driver"
-	e "Project/elevator"
 	p "Project/network/peers"
 	"Project/utils"
 	"Project/watchdog"
@@ -47,7 +46,7 @@ func Assigner(
 				if !isMaster {
 					continue
 				}
-				state := msg.Content.(e.ElevatorState)
+				state := msg.Content.(c.ElevatorState)
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
 				for _, ID := range peersOnline {
@@ -60,10 +59,12 @@ func Assigner(
 				}
 			// ============ MASTER ===========
 			case c.NEW_MASTER:
+				println("NEW MASTER")
 				if !isMaster {
 					continue
 				}
-				backupGlobalState := msg.Content.([]e.ElevatorState)
+				fmt.Println("UPDATE THIS TO MASTER")
+				backupGlobalState := msg.Content.([]c.ElevatorState)
 				globalState = backupGlobalState
 				master := strconv.Itoa(c.ElevatorID)
 				// When master goes online, this function is needed to update its cab calls
@@ -76,7 +77,7 @@ func Assigner(
 				if isMaster {
 					continue
 				}
-				states := msg.Content.([]e.ElevatorState)
+				states := msg.Content.([]c.ElevatorState)
 				globalState = states
 			}
 
@@ -98,6 +99,7 @@ func Assigner(
 			isMaster = c.ElevatorID == c.MasterID
 			if c.MasterID != oldMaster && !isNewElevator(c.ElevatorID, update) {
 				// If there is a new master, the slave elevators will send him their backup global states
+				println("UPDATE NEW MASTER")
 				newMasterUpdate := utils.CreateMessage(c.MasterID, globalState, c.NEW_MASTER)
 				ch_msgToPack <- newMasterUpdate
 			}
@@ -124,7 +126,7 @@ func Assigner(
 
 func newPeerUpdate(
 	newPeer string,
-	globalState []e.ElevatorState,
+	globalState []c.ElevatorState,
 	ch_msgToPack chan<- c.NetworkMessage,
 	peersOnline []int) {
 	if len(newPeer) > 0 {

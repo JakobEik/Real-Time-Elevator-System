@@ -3,6 +3,7 @@ package assigner2
 import (
 	"Project/driver"
 	e "Project/elevator"
+	"Project/network/peers"
 	"Project/utils"
 	"reflect"
 	"testing"
@@ -83,5 +84,41 @@ func Test_removeHallOrders(t *testing.T) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("removeHallOrders() = %v; want %v", got, want)
+	}
+}
+
+func Test_isNewElevator(t *testing.T) {
+	elevID := 1
+	update := peers.PeerUpdate{
+		Peers: []string{"0", "2"},
+		New:   "1",
+		Lost:  nil,
+	}
+
+	got := isNewElevator(elevID, update)
+	if !reflect.DeepEqual(got, true) {
+		t.Errorf("isNewElevator() = %v; want %v", got, true)
+	}
+
+	elevID = 1
+	update = peers.PeerUpdate{
+		Peers: nil,
+		New:   "2",
+		Lost:  nil,
+	}
+
+	got = isNewElevator(elevID, update)
+	if !reflect.DeepEqual(got, false) {
+		t.Errorf("isNewElevator() = %v; want %v", got, false)
+	}
+}
+
+func Test_isElevatorOffline(t *testing.T) {
+	elevID := 1
+	peersOnline := []int{0, 2}
+
+	got := isElevatorOffline(elevID, peersOnline)
+	if !reflect.DeepEqual(got, true) {
+		t.Errorf("isNewElevator() = %v; want %v", got, true)
 	}
 }

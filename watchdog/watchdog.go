@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const watchdogTimerDuration = time.Second * 100
+const watchdogTimerDuration = time.Second * 1
 
 func Watchdog(ch_bark chan<- bool, ch_pet <-chan bool, moduleName string) {
 
@@ -18,7 +18,7 @@ func Watchdog(ch_bark chan<- bool, ch_pet <-chan bool, moduleName string) {
 			pet = value
 		case <-wdTimer.C:
 			if pet == false {
-				// panic("Watchdog timer limit reached for " + moduleName)
+				println("Watchdog timer limit reached for " + moduleName)
 				failroutine.FailRoutine()
 			}
 			pet = false
