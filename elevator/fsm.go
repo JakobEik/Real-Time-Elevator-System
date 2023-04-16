@@ -15,7 +15,7 @@ const doorOpenDuration = time.Second * 3
 func Fsm(
 	ch_executeOrder <-chan drv.ButtonEvent,
 	ch_floorArrival chan int,
-	ch_obstruction <-chan bool,
+	ch_obstruction chan bool,
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- c.ElevatorState,
 	ch_hallLights <-chan [][]bool,
@@ -23,6 +23,7 @@ func Fsm(
 	ch_offNetwork <-chan bool) {
 
 	offNetwork := false
+	isObstructed := false
 
 	ch_bark := make(chan bool)
 	ch_pet := make(chan bool)
@@ -43,7 +44,6 @@ func Fsm(
 		select {
 		case value := <-ch_offNetwork:
 			offNetwork = value
-			println("OFF NETTWORK : ", value)
 		case <-ch_bark:
 			ch_pet <- true
 		case hallOrders := <-ch_hallLights:
@@ -69,7 +69,6 @@ func Fsm(
 				elev.Orders[floor][btn_type] = true
 
 			case c.IDLE:
-				println("3")
 				if shouldClearImmediatly(elev, floor, btn_type) {
 					drv.SetDoorOpenLamp(true)
 					elev.Behavior = c.DOOR_OPEN
@@ -97,17 +96,18 @@ func Fsm(
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
 			ch_unavailable <- false
-			//setCabLights(elev.Orders)
 
 			if shouldStop(elev) {
-				//fmt.Println("DOOR OPEN")
 				drv.SetMotorDirection(drv.MD_Stop)
 				setMotorLossTimer(drv.MD_Stop, motorLossTimer)
 				elev.Behavior = c.DOOR_OPEN
 				elev = clearAtCurrentFloor(elev)
 				drv.SetDoorOpenLamp(true)
+				// If sleep is not here, sometimes the door lamp on the physical elevator wont turn on?????
+				time.Sleep(time.Millisecond)
 				doorTimer.Reset(doorOpenDuration)
 				//println("set door timer")
+				ch_obstruction <- isObstructed
 			}
 			ch_newLocalState <- elev
 
@@ -116,14 +116,17 @@ func Fsm(
 			ch_newLocalState <- elev
 
 		case obstruction := <-ch_obstruction:
+			isObstructed = obstruction
 			if obstruction && elev.Behavior == c.DOOR_OPEN {
 				doorTimer.Stop()
-				time.Sleep(time.Millisecond * 50)
 				elev = clearAllFloors(elev)
+				time.Sleep(time.Millisecond * 50)
 				ch_unavailable <- true
+
 			} else {
 				doorTimer.Reset(doorOpenDuration)
 				ch_unavailable <- false
+
 			}
 			ch_newLocalState <- elev
 

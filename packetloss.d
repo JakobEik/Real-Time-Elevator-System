@@ -22,7 +22,7 @@ Examples:
     sudo packetloss -f
         Removes all packet loss rules, disabling packet loss
 
-    sudo packetloss -p 12345,23456,34567 -r 0.25
+    sudo packetloss -p 23444,34444 -r 0.25
         Applies 25% packet loss to ports 12345, 23456, and 34567
 
     sudo packetloss -n executablename -r 0.25
