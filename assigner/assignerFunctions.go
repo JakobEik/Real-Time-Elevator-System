@@ -25,13 +25,13 @@ func isNewElevator(ID int, update peers.PeerUpdate) bool {
 	if len(update.New) > 0 {
 		newElevID, _ := strconv.Atoi(update.New)
 		if ID == newElevID {
-			return false
+			return true
 		}
 	}
 	return !isElevatorOffline(ID, peersOnline)
 }
 
-func getCabCalls(e e.ElevatorState) []drv.ButtonEvent {
+func getCabCalls(e c.ElevatorState) []drv.ButtonEvent {
 	orders := e.Orders
 	var cabColumn []bool
 	var cabCalls []drv.ButtonEvent
@@ -47,51 +47,91 @@ func getCabCalls(e e.ElevatorState) []drv.ButtonEvent {
 	return cabCalls
 }
 
-// distributeOrders sends every order from the given elevator to the masterNode of the system
-func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) e.ElevatorState{
-	newElevator := elevator
-	orders := elevator.Orders
-	println("DISTRIBUTE THIS ELEVATOR")
-	e.PrintState(elevator)
-	for floor := range orders {
-		for btn := 0; btn < c.N_BUTTONS-1; btn++ {
-			if orders[floor][btn] == true {
-				order := drv.ButtonEvent{Floor: floor, Button: drv.ButtonType(btn)}
-				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
-				fmt.Println("DISTRIBUTE ORDER:", order)
-				ch_msgToPack <- msg
-				newElevator.Orders[floor][btn] = false
-			}
-		}
+// updateGlobalState sets the hall orders to false for the lost peers in the global state
+// after the orders are distributed
+func updateGlobalState(globalState []c.ElevatorState, lostPeers []int) []c.ElevatorState {
+	elevators := filterElevator(globalState, lostPeers)
+	for _, elevator := range elevators {
+		elevator.Orders = removeHallOrders(elevator.Orders)
 	}
-	return newElevator
+	for index, ID := range lostPeers {
+		globalState[ID] = elevators[index]
+	}
+	return globalState
+
 }
 
-func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
-	buttons := e.InitElev(0).Orders
-	for _, ID := range onlineElevs {
-		for floor := 0; floor < c.N_FLOORS; floor++ {
-			for btn := 0; btn < c.N_BUTTONS-1; btn++ {
-				if globalState[ID].Orders[floor][btn] == true {
-					buttons[floor][btn] = true
-				}
+func makeMessagesFromOrders(orders [][]bool) []c.NetworkMessage {
+	var messages []c.NetworkMessage
+	for floor, floors := range orders {
+		for btn, orderValue := range floors {
+			if orderValue {
+				order := drv.ButtonEvent{Floor: floor, Button: drv.ButtonType(btn)}
+				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
+				messages = append(messages, msg)
 			}
 		}
 	}
-	return buttons
+	return messages
+}
+
+// getCombinedOrders Returns the combined orders for the input elevators
+func getCombinedOrders(elevators []c.ElevatorState) [][]bool {
+	if len(elevators) == 0 {
+		return nil
+	}
+	orders := e.InitElev(0).Orders
+	for _, elevator := range elevators {
+		for floor, floors := range elevator.Orders {
+			for btn, order := range floors {
+				orders[floor][btn] = orders[floor][btn] || order
+			}
+		}
+	}
+	return orders
+}
+
+func filterElevator(globalState []c.ElevatorState, elevator_IDs []int) []c.ElevatorState {
+	var result []c.ElevatorState
+	for _, ID := range elevator_IDs {
+		result = append(result, globalState[ID])
+	}
+	return result
+}
+
+func getHallOrders(globalState []c.ElevatorState, IDs []int) [][]bool {
+	elevators := filterElevator(globalState, IDs)
+	globalOrders := getCombinedOrders(elevators)
+	// Sets all Cab orders to false since these are not used
+	for i := range globalOrders {
+		globalOrders[i][len(globalOrders[i])-1] = false
+	}
+	return globalOrders
+}
+
+func removeHallOrders(orders [][]bool) [][]bool {
+	for floor := range orders {
+		for btn := range orders[floor] {
+			if btn != len(orders[floor])-1 {
+				orders[floor][btn] = false
+			}
+		}
+	}
+	return orders
+
 }
 
 func stringArrayToIntArray(strings []string) []int {
-	ints := make([]int, len(strings))
-	var err error
-	for i, s := range strings {
-		ints[i], err = strconv.Atoi(s)
+	result := make([]int, len(strings))
+	for i, str := range strings {
+		num, err := strconv.Atoi(str)
 		if err != nil {
-			fmt.Println("Error:", err)
+			fmt.Println("EROOR IN stringArrayToIntArray")
 			panic(err)
 		}
+		result[i] = num
 	}
-	return ints
+	return result
 }
 
 // getMaster returns the elevator with the lowest ID

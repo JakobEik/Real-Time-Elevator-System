@@ -1,4 +1,4 @@
-package assigner2
+package assigner
 
 import (
 	"Project/driver"

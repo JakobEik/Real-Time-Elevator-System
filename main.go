@@ -1,7 +1,7 @@
 package main
 
 import (
-	assigner2 "Project/assigner2"
+	assigner2 "Project/assigner"
 	"Project/config"
 	d "Project/distributor"
 	drv "Project/driver"

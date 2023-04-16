@@ -4,6 +4,7 @@ import (
 	c "Project/config"
 	"Project/utils"
 	"Project/watchdog"
+	"fmt"
 	"time"
 )
 
@@ -20,7 +21,7 @@ type packetWithResendAttempts struct {
 }
 
 const numOfRetries = 10
-const confirmationWaitDuration = time.Millisecond * 30
+const confirmationWaitDuration = time.Millisecond * 50
 
 // PacketDistributor distributes all messages between local and the network.
 // Also continues to send a packet if no acknowledgment of the message has been received.
@@ -71,9 +72,11 @@ func PacketDistributor(
 
 		case <-resendPacketsTicker.C:
 			// Resends all packets that have not been confirmed yet every x milliseconds
+			if len(packetsToBeConfirmed) > 0 {
+				println("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
+			}
 			for seqNum, packetAndAttempts := range packetsToBeConfirmed {
-				//print("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
-				//fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
+				fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
 				if packetAndAttempts.attempts > numOfRetries {
 					delete(packetsToBeConfirmed, seqNum)
 				} else {

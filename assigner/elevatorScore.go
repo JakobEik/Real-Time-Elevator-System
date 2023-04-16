@@ -3,17 +3,16 @@ package assigner
 import (
 	c "Project/config"
 	drv "Project/driver"
-	e "Project/elevator"
 	"math"
 )
 
 const DOOR_OPEN_TIME = 3
 const TRAVEL_TIME = 3
 
-func getBestElevatorForOrder(GlobalState []e.ElevatorState, order drv.ButtonEvent, elevatorIDs []int) int {
+func getBestElevatorForOrder1(GlobalState []c.ElevatorState, order drv.ButtonEvent, peersOnline []int) int {
 	var bestElevatorID int
 	bestScore := -9999
-	for _, elevID := range elevatorIDs {
+	for _, elevID := range peersOnline {
 		ElevatorScore := score(GlobalState[elevID], order)
 		//println("ID:", elevID, ", SCORE:", ElevatorScore)
 		if ElevatorScore > bestScore {
@@ -26,7 +25,7 @@ func getBestElevatorForOrder(GlobalState []e.ElevatorState, order drv.ButtonEven
 }
 
 // Nearest Car Algorithm
-func score(elev e.ElevatorState, order drv.ButtonEvent) int {
+func score(elev c.ElevatorState, order drv.ButtonEvent) int {
 
 	ordBtn := order.Button
 	score := 0
@@ -66,7 +65,7 @@ func score(elev e.ElevatorState, order drv.ButtonEvent) int {
 	return score - orderCount(elev)/2
 }
 
-func orderCount(e e.ElevatorState) int {
+func orderCount(e c.ElevatorState) int {
 	orders := e.Orders
 	count := 0
 	for _, row := range orders {
@@ -79,7 +78,22 @@ func orderCount(e e.ElevatorState) int {
 	return count
 }
 
-func score1(elev e.ElevatorState, newOrder drv.ButtonEvent) int {
+func getBestElevatorForOrder(GlobalState []c.ElevatorState, order drv.ButtonEvent, peersOnline []int) int {
+	var bestElevatorID int
+	bestScore := 9999
+	for _, elevID := range peersOnline {
+		ElevatorScore := score1(GlobalState[elevID], order)
+		//println("ID:", elevID, ", SCORE:", ElevatorScore)
+		if ElevatorScore < bestScore {
+			bestScore = ElevatorScore
+			bestElevatorID = elevID
+		}
+	}
+
+	return bestElevatorID
+}
+
+func score1(elev c.ElevatorState, newOrder drv.ButtonEvent) int {
 	estimatedTime := 0
 
 	// Loop through all floors and orders of the current elevator
