@@ -63,6 +63,7 @@ func Distributor(
 			}
 
 		case failure := <-ch_failure:
+			println("FAILURE==========", failure)
 			ch_peerTxEnable <- !failure
 		}
 	}

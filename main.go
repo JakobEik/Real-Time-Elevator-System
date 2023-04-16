@@ -33,6 +33,7 @@ func main() {
 	ch_executeOrder := make(chan drv.ButtonEvent, bufferSize)
 	ch_globalHallOrders := make(chan [][]bool, bufferSize)
 	ch_failure := make(chan bool, bufferSize)
+	ch_offNetwork := make(chan bool, bufferSize)
 
 	// Channels for Packet Distributor
 	ch_msgToPack := make(chan config.NetworkMessage, bufferSize)
@@ -55,10 +56,10 @@ func main() {
 	go drv.PollStopButton(ch_stop)
 
 	// Networking go routines
-	go bcast.Transmitter(23456, ch_packetToNetwork)
-	go bcast.Receiver(23456, ch_packetFromNetwork)
-	go peers.Transmitter(34567, ElevatorStrID, ch_peerTxEnable)
-	go peers.Receiver(34567, ch_peerUpdate)
+	go bcast.Transmitter(23444, ch_packetToNetwork)
+	go bcast.Receiver(23444, ch_packetFromNetwork)
+	go peers.Transmitter(34444, ElevatorStrID, ch_peerTxEnable)
+	go peers.Receiver(34444, ch_peerUpdate)
 
 	// Error handling
 	// go failRoutine(port, ElevatorStrID, ch_failure)
@@ -83,7 +84,8 @@ func main() {
 	go assigner.Assigner(
 		ch_peerUpdate,
 		ch_msgToAssigner,
-		ch_msgToPack)
+		ch_msgToPack,
+		ch_offNetwork)
 
 	e.Fsm(
 		ch_executeOrder,
@@ -92,7 +94,8 @@ func main() {
 		ch_stop,
 		ch_localStateUpdated,
 		ch_globalHallOrders,
-		ch_failure)
+		ch_failure,
+		ch_offNetwork)
 }
 
 // Error function

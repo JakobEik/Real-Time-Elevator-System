@@ -15,7 +15,8 @@ import (
 func Assigner(
 	ch_peerUpdate chan p.PeerUpdate,
 	ch_msgToAssigner <-chan c.NetworkMessage,
-	ch_msgToPack chan<- c.NetworkMessage) {
+	ch_msgToPack chan<- c.NetworkMessage,
+	ch_offNetwork chan<- bool) {
 
 	ch_bark := make(chan bool)
 	ch_pet := make(chan bool)
@@ -31,7 +32,7 @@ func Assigner(
 			ch_pet <- true
 
 		case m := <-ch_msgToAssigner:
-			//fmt.Println("MASTER RECEIVE:", msg.Type)
+			//fmt.Println("MASTER RECEIVE:", m.Type)
 			msg := utils.DecodeMessage(m)
 			switch msg.Type {
 			// ============ MASTER ===========
@@ -43,7 +44,7 @@ func Assigner(
 				bestScoreElevator := getBestElevatorForOrder(globalState, order, peersOnline)
 				doOrder := utils.CreateMessage(bestScoreElevator, order, c.DO_ORDER)
 				ch_msgToPack <- doOrder
-				//fmt.Println("ORDER to elevator:", bestScoreElevator)
+				fmt.Println("ORDER to elevator:", bestScoreElevator)
 
 			case c.LOCAL_STATE_CHANGED:
 				if c.ElevatorID != c.MasterID {
@@ -87,13 +88,14 @@ func Assigner(
 			}
 
 		case update := <-ch_peerUpdate:
+
 			fmt.Println("PEER UPDATE:", update)
 			peersOnline = stringArrayToIntArray(update.Peers)
 			oldMaster := c.MasterID
 			// Master is always assigned to the elevator with the lowest ID on the network.
 			// This is to make sure everyone that is connected always agrees on whom the master is
 			c.MasterID = getMaster(peersOnline)
-			if c.MasterID != oldMaster && isNewElevator(c.ElevatorID, update) {
+			if c.MasterID != oldMaster && !isNewElevator(c.ElevatorID, update) {
 				println("SEND STATE TO NEW MASTER")
 				// If there is a new master, the slave elevators will send him their backup global states
 				newMasterUpdate := utils.CreateMessage(c.MasterID, globalState, c.NEW_MASTER)
@@ -103,8 +105,14 @@ func Assigner(
 			println("MASTER:", c.MasterID)
 
 			if c.ElevatorID == c.MasterID {
-				lostPeersUpdate(update.Lost, globalState, ch_msgToPack)
+				globalState = lostPeersUpdate(update.Lost, globalState, ch_msgToPack)
 				newPeerUpdate(update.New, globalState, ch_msgToPack, peersOnline)
+			}
+
+			if len(peersOnline) == 0 {
+				ch_offNetwork <-true
+			}else{
+				ch_offNetwork <-false
 			}
 		}
 		//printElevFloors(globalState)
@@ -121,14 +129,17 @@ func printElevFloors(globalState []e.ElevatorState) {
 	}
 }
 
-func lostPeersUpdate(lostPeers []string, globalState []e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) {
+func lostPeersUpdate(lostPeers []string, globalState []e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) []e.ElevatorState{
+	newGlobalState := globalState
 	// Distribute orders from lost peers if there are any
 	if len(lostPeers) > 0 {
 		IDs := stringArrayToIntArray(lostPeers)
 		for _, elevatorID := range IDs {
-			distributeOrders(globalState[elevatorID], ch_msgToPack)
+			println("DISTRIBUTE ELEVATOR :", elevatorID)
+			newGlobalState[elevatorID] = distributeOrders(globalState[elevatorID], ch_msgToPack)
 		}
 	}
+	return newGlobalState
 
 }
 

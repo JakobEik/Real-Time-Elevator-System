@@ -48,20 +48,23 @@ func getCabCalls(e e.ElevatorState) []drv.ButtonEvent {
 }
 
 // distributeOrders sends every order from the given elevator to the masterNode of the system
-func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) {
+func distributeOrders(elevator e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) e.ElevatorState{
+	newElevator := elevator
 	orders := elevator.Orders
-	//println("DISTRIBUTE THIS ELEVATOR")
-	//e.PrintState(elevator)
+	println("DISTRIBUTE THIS ELEVATOR")
+	e.PrintState(elevator)
 	for floor := range orders {
 		for btn := 0; btn < c.N_BUTTONS-1; btn++ {
 			if orders[floor][btn] == true {
 				order := drv.ButtonEvent{Floor: floor, Button: drv.ButtonType(btn)}
 				msg := utils.CreateMessage(c.MasterID, order, c.NEW_ORDER)
-				//fmt.Println("DISTRIBUTE ORDER:", order)
+				fmt.Println("DISTRIBUTE ORDER:", order)
 				ch_msgToPack <- msg
+				newElevator.Orders[floor][btn] = false
 			}
 		}
 	}
+	return newElevator
 }
 
 func getGlobalHallOrders(globalState []e.ElevatorState, onlineElevs []int) [][]bool {
@@ -94,7 +97,7 @@ func stringArrayToIntArray(strings []string) []int {
 // getMaster returns the elevator with the lowest ID
 func getMaster(peersOnline []int) int {
 	if len(peersOnline) == 0 {
-		panic("NO MORE ELEVATORS ON NETWORK")
+		return c.ElevatorID
 	}
 	masterID := peersOnline[0]
 	for _, elev := range peersOnline[1:] {

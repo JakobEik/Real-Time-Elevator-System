@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-const motorLossTimeDuration = time.Second * 5
+const motorLossTimeDuration = time.Second * 4
 const doorOpenDuration = time.Second * 3
 
 func Fsm(
@@ -19,7 +19,10 @@ func Fsm(
 	ch_stop <-chan bool,
 	ch_newLocalState chan<- ElevatorState,
 	ch_globalHallOrders <-chan [][]bool,
-	ch_failure chan<- bool) {
+	ch_failure chan<- bool, 
+	ch_offNetwork <-chan bool) {
+
+	offNetwork := false	
 
 	ch_bark := make(chan bool)
 	ch_pet := make(chan bool)
@@ -38,12 +41,13 @@ func Fsm(
 
 	for {
 		select {
-		//Watchdog
+		case value :=  <- ch_offNetwork:
+			offNetwork = value	
+			println("OFF NETTWORK : ", value)
 		case <-ch_bark:
 			ch_pet <- true
 		case hallOrders := <-ch_globalHallOrders:
 			setHallLights(hallOrders)
-
 		case <-motorLossTimer.C:
 			ch_failure <- true
 			println("======================= MOTOR LOSS ==============================")
@@ -58,13 +62,12 @@ func Fsm(
 			elev.Floor = floor
 			drv.SetFloorIndicator(floor)
 			ch_failure <- false
-			setCabLights(elev.Orders)
-			setCabLights(elev.Orders)
+			//setCabLights(elev.Orders)
+
 
 			if shouldStop(elev) {
 				//fmt.Println("DOOR OPEN")
 				drv.SetMotorDirection(drv.MD_Stop)
-				elev.Direction = drv.MD_Stop
 				setMotorLossTimer(drv.MD_Stop, motorLossTimer)
 				elev.Behavior = c.DOOR_OPEN
 				clearAtCurrentFloor(&elev)
@@ -110,6 +113,10 @@ func Fsm(
 		}
 		//PrintState(elev)
 		setCabLights(elev.Orders)
+		if offNetwork {
+			setHallLights(elev.Orders)
+			println("SLAVE LIGGST")
+		}
 
 	}
 

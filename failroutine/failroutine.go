@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"runtime"
 	"strconv"
+	"time"
 )
 
 func FailRoutine() {
@@ -16,6 +17,9 @@ func FailRoutine() {
 	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
 	id := os.Args[2]
 	oSys := runtime.GOOS
+
+	// wait to restart so that the elevator have time to send false on ch_peerTxEnable before restart
+	time.Sleep(time.Second)
 
 	switch oSys {
 	case "windows":
@@ -32,15 +36,24 @@ func FailRoutine() {
 	case "darwin":
 		fmt.Println("MAC operating system")
 
+	/*case "linux":
+	fmt.Println("Linux")
+	drv.SetMotorDirection(drv.MD_Stop)
+	// err := exec.Command("gnome-terminal", "-x", "sh", "-c", "./main -init=false -port="+port+" -id="+id).Run()
+	err := exec.Command("gnome-terminal", "-x", "sh", "-c", fmt.Sprintf("main.go %s %s", port, id)).Run()
+	if err != nil {
+		fmt.Println("Unable to reboot process, crashing...")
+	}
+	fmt.Println("Program killed !")
+	os.Exit(0)*/
 	case "linux":
 		fmt.Println("Linux")
 		drv.SetMotorDirection(drv.MD_Stop)
-		// err := exec.Command("gnome-terminal", "-x", "sh", "-c", "./main -init=false -port="+port+" -id="+id).Run()
-		err := exec.Command("gnome-terminal", "-x", "sh", "-c", fmt.Sprintf("main.go %s %s", port, id)).Run()
+		err := exec.Command("gnome-terminal", "-x", "sh", "-c", fmt.Sprintf("go run main.go %s %s; exec bash", port, id)).Run()
 		if err != nil {
 			fmt.Println("Unable to reboot process, crashing...")
 		}
-		fmt.Println("Program killed !")
+		fmt.Println("HALLO FRA FAILROUTINE!")
 		os.Exit(0)
 	default:
 		fmt.Println("FUBAR")

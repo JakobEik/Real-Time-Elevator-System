@@ -79,152 +79,35 @@ func orderCount(e e.ElevatorState) int {
 	return count
 }
 
-func chooseElevDirection(e e.ElevatorState) (drv.MotorDirection, c.Behavior) {
-	switch e.Direction {
-	case drv.MD_Up:
-		if ordersAbove(e) {
-			return drv.MD_Up, c.MOVING
-		} else if ordersHere(e) {
-			return drv.MD_Stop, c.DOOR_OPEN
-		} else if ordersBelow(e) {
-			return drv.MD_Down, c.MOVING
-		} else {
-			return drv.MD_Stop, c.IDLE
-		}
-	case drv.MD_Down:
-		if ordersBelow(e) {
-			return drv.MD_Down, c.MOVING
-		} else if ordersHere(e) {
-			return drv.MD_Up, c.DOOR_OPEN
-		} else if ordersAbove(e) {
-			return drv.MD_Up, c.MOVING
-		} else {
-			return drv.MD_Stop, c.IDLE
-		}
-	case drv.MD_Stop:
-		if ordersHere(e) {
-			return drv.MD_Stop, c.DOOR_OPEN
-		} else if ordersAbove(e) {
-			return drv.MD_Up, c.MOVING
-		} else if ordersBelow(e) {
-			return drv.MD_Down, c.MOVING
-		} else {
-			return drv.MD_Stop, c.IDLE
-		}
-	default:
-		return drv.MD_Stop, c.IDLE
-	}
-}
+func score1(elev e.ElevatorState, newOrder drv.ButtonEvent) int {
+	estimatedTime := 0
 
-func score1(e_old e.ElevatorState, b drv.ButtonEvent) int {
-	e := e_old
-	floor := b.Floor
-	button := b.Button
-	e.Orders[floor][button] = true
-
-	var arrivedAtRequest bool
-
-	ifEqual := func(inner_b drv.ButtonType, inner_f int) {
-		if inner_b == b.Button {
-			arrivedAtRequest = true
-		}
-	}
-
-	duration := 0
-
-	switch e.Behavior {
-	case c.IDLE:
-		e.Direction, e.Behavior = chooseElevDirection(e)
-		if e.Direction == drv.MD_Stop {
-			return duration
-		}
-	case c.MOVING:
-		duration += TRAVEL_TIME / 2
-		e.Floor += int(e.Direction)
-	case c.DOOR_OPEN:
-		duration -= DOOR_OPEN_TIME / 2
-	}
-
-	for {
-		if shouldStop(e) {
-			e = requests_clearAtCurrentFloor(e, ifEqual)
-			if arrivedAtRequest {
-				return duration
-			}
-			duration += DOOR_OPEN_TIME
-			e.Direction, e.Behavior = chooseElevDirection(e)
-		}
-		e.Floor += int(e.Direction)
-		duration += TRAVEL_TIME
-	}
-}
-
-func requests_clearAtCurrentFloor(e_old e.ElevatorState, onClearedRequest func(btn drv.ButtonType, floor int)) e.ElevatorState {
-	e := e_old
-	// This shouldn't clear every single order - just to make the example shorter
-	for btn := 0; btn < c.N_BUTTONS; btn++ {
-		if e.Orders[e.Floor][btn] {
-			e.Orders[e.Floor][btn] = false
-			if onClearedRequest != nil {
-				onClearedRequest(drv.ButtonType(btn), e.Floor)
-			}
-		}
-	}
-	return e
-}
-
-func ordersAbove(e e.ElevatorState) bool {
-	if e.Floor >= c.N_FLOORS {
-		return false
-	}
-	for f := e.Floor + 1; f < c.N_FLOORS; f++ {
+	// Loop through all floors and orders of the current elevator
+	for floor := 0; floor < c.N_FLOORS; floor++ {
 		for btn := 0; btn < c.N_BUTTONS; btn++ {
-			if e.Orders[f][btn] {
-				return true
+			if elev.Orders[floor][btn] {
+				// Calculate time to reach this floor from current floor
+				distance := int(math.Abs(float64(elev.Floor - floor)))
+				timeToReachFloor := distance * TRAVEL_TIME // 3 seconds per floor
+
+				// Add time to open
+				timeToServeOrder := DOOR_OPEN_TIME // 3 seconds to open
+
+				// Update estimated time to complete pending orders
+				estimatedTime += timeToReachFloor + timeToServeOrder
 			}
 		}
 	}
-	return false
-}
 
-func ordersBelow(e e.ElevatorState) bool {
-	if e.Floor <= 0 {
-		return false
-	}
-	for f := 0; f < e.Floor; f++ {
-		for btn := 0; btn < c.N_BUTTONS; btn++ {
-			if e.Orders[f][btn] {
-				return true
-			}
-		}
-	}
-	return false
-}
+	// Calculate estimated time to reach new order floor from current floor
+	distance := int(math.Abs(float64(elev.Floor - newOrder.Floor)))
+	timeToReachFloor := distance * TRAVEL_TIME // 3 seconds per floor
 
-func ordersHere(e e.ElevatorState) bool {
-	for btn := 0; btn < c.N_BUTTONS; btn++ {
-		if e.Orders[e.Floor][btn] {
-			return true
-		}
-	}
-	return false
-}
+	// Add time to open
+	timeToServeOrder := DOOR_OPEN_TIME // 3 seconds to open
 
-func shouldStop(e e.ElevatorState) bool {
-	switch e.Direction {
-	case drv.MD_Down:
-		return e.Orders[e.Floor][drv.BT_HallDown] ||
-			e.Orders[e.Floor][drv.BT_Cab] ||
-			!ordersBelow(e)
-	case drv.MD_Up:
+	// Add estimated time for the new order to the total estimated time
+	estimatedTime += timeToReachFloor + timeToServeOrder
 
-		return e.Orders[e.Floor][drv.BT_HallUp] ||
-			e.Orders[e.Floor][drv.BT_Cab] ||
-			!ordersAbove(e)
-	case drv.MD_Stop:
-		fallthrough
-	default:
-		return true
-	}
-
+	return estimatedTime
 }
