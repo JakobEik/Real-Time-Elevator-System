@@ -35,17 +35,8 @@ func FailRoutine() {
 
 	case "darwin":
 		fmt.Println("MAC operating system")
+		os.Exit(0)
 
-	/*case "linux":
-	fmt.Println("Linux")
-	drv.SetMotorDirection(drv.MD_Stop)
-	// err := exec.Command("gnome-terminal", "-x", "sh", "-c", "./main -init=false -port="+port+" -id="+id).Run()
-	err := exec.Command("gnome-terminal", "-x", "sh", "-c", fmt.Sprintf("main.go %s %s", port, id)).Run()
-	if err != nil {
-		fmt.Println("Unable to reboot process, crashing...")
-	}
-	fmt.Println("Program killed !")
-	os.Exit(0)*/
 	case "linux":
 		fmt.Println("Linux")
 		drv.SetMotorDirection(drv.MD_Stop)

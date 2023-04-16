@@ -15,23 +15,10 @@ type ElevatorState struct {
 type Behavior int
 
 const (
-	IDLE Behavior = iota
-	DOOR_OPEN
-	MOVING
+	EB_IDLE Behavior = iota
+	EB_DOOR_OPEN
+	EB_MOVING
 )
-
-func (b Behavior) String() string {
-	switch b {
-	case IDLE:
-		return "IDLE"
-	case DOOR_OPEN:
-		return "DOOR_OPEN"
-	case MOVING:
-		return "MOVING"
-	default:
-		return fmt.Sprintf("%d", int(b))
-	}
-}
 
 type MessageType int
 
@@ -44,6 +31,15 @@ const (
 	HALL_LIGHTS_UPDATE
 	NEW_MASTER
 )
+
+type NetworkMessage struct {
+	SenderID   int
+	ReceiverID int
+	Type       MessageType
+	Content    any
+}
+
+// String methods
 
 func (t MessageType) String() string {
 	switch t {
@@ -66,9 +62,15 @@ func (t MessageType) String() string {
 	}
 }
 
-type NetworkMessage struct {
-	SenderID   int
-	ReceiverID int
-	Type       MessageType
-	Content    any
+func (b Behavior) String() string {
+	switch b {
+	case EB_IDLE:
+		return "EB_IDLE"
+	case EB_DOOR_OPEN:
+		return "EB_DOOR_OPEN"
+	case EB_MOVING:
+		return "EB_MOVING"
+	default:
+		return fmt.Sprintf("%d", int(b))
+	}
 }

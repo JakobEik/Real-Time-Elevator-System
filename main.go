@@ -1,7 +1,7 @@
 package main
 
 import (
-	assigner2 "Project/assigner"
+	"Project/assigner"
 	"Project/config"
 	d "Project/distributor"
 	drv "Project/driver"
@@ -13,7 +13,7 @@ import (
 	"strconv"
 )
 
-const bufferSize = 128
+const bufferSize = 512
 
 func main() {
 	port := os.Args[1]
@@ -26,17 +26,17 @@ func main() {
 	ch_packetToNetwork := make(chan d.Packet, bufferSize)
 	ch_packetFromNetwork := make(chan d.Packet, bufferSize)
 
-	// channels between distributor and FSM
+	// channels between distributor and Fsm
 	ch_localStateUpdated := make(chan config.ElevatorState, bufferSize)
 	ch_executeOrder := make(chan drv.ButtonEvent, bufferSize)
 	ch_hallLights := make(chan [][]bool, bufferSize)
 	ch_unavailable := make(chan bool, bufferSize)
 
-	// Channels between Assigner and FSM
+	// Channels between Assigner and Fsm
 	ch_offNetwork := make(chan bool, bufferSize)
 
 	// Channels for Packet Distributor
-	ch_msgToPack := make(chan config.NetworkMessage, bufferSize)
+	ch_packMessage := make(chan config.NetworkMessage, bufferSize)
 	ch_msgToAssigner := make(chan config.NetworkMessage, bufferSize)
 	ch_msgToDistributor := make(chan config.NetworkMessage, bufferSize)
 
@@ -46,7 +46,6 @@ func main() {
 	ch_obstruction := make(chan bool, bufferSize)
 	ch_stop := make(chan bool)
 
-	//drv.Init("localhost:15657", config.N_FLOORS)
 	drv.Init("localhost:"+port, config.N_FLOORS)
 
 	// Driver go routines
@@ -56,14 +55,14 @@ func main() {
 	go drv.PollStopButton(ch_stop)
 
 	// Networking go routines
-	go bcast.Transmitter(23444, ch_packetToNetwork)
-	go bcast.Receiver(23444, ch_packetFromNetwork)
-	go peers.Transmitter(34444, ElevatorStrID, ch_peerTxEnable)
-	go peers.Receiver(34444, ch_peerUpdate)
+	go bcast.Transmitter(config.BROADCAST_PORT, ch_packetToNetwork)
+	go bcast.Receiver(config.BROADCAST_PORT, ch_packetFromNetwork)
+	go peers.Transmitter(config.PEER_PORT, ElevatorStrID, ch_peerTxEnable)
+	go peers.Receiver(config.PEER_PORT, ch_peerUpdate)
 
 	go d.Distributor(
 		ch_msgToDistributor,
-		ch_msgToPack,
+		ch_packMessage,
 		ch_executeOrder,
 		ch_hallLights,
 		ch_localStateUpdated,
@@ -74,14 +73,14 @@ func main() {
 	go d.PacketDistributor(
 		ch_packetFromNetwork,
 		ch_packetToNetwork,
-		ch_msgToPack,
+		ch_packMessage,
 		ch_msgToAssigner,
 		ch_msgToDistributor)
 
-	go assigner2.Assigner(
+	go assigner.Assigner(
 		ch_peerUpdate,
 		ch_msgToAssigner,
-		ch_msgToPack,
+		ch_packMessage,
 		ch_offNetwork)
 
 	e.Fsm(

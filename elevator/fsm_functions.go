@@ -5,6 +5,21 @@ import (
 	drv "Project/driver"
 )
 
+func InitElev(floor int) c.ElevatorState {
+	orders := make([][]bool, 0)
+	for floor := 0; floor < c.N_FLOORS; floor++ {
+		orders = append(orders, make([]bool, c.N_BUTTONS))
+		for button := range orders[floor] {
+			orders[floor][button] = false
+		}
+	}
+	return c.ElevatorState{
+		Floor:     floor,
+		Direction: drv.MD_Stop,
+		Orders:    orders,
+		Behavior:  c.EB_IDLE}
+}
+
 func ordersIsEmpty(e c.ElevatorState) bool {
 	return !ordersAbove(e) && !ordersBelow(e) && !ordersHere(e)
 }
@@ -50,36 +65,36 @@ func chooseElevDirection(e c.ElevatorState) (drv.MotorDirection, c.Behavior) {
 	switch e.Direction {
 	case drv.MD_Up:
 		if ordersAbove(e) {
-			return drv.MD_Up, c.MOVING
+			return drv.MD_Up, c.EB_MOVING
 		} else if ordersHere(e) {
-			return drv.MD_Stop, c.DOOR_OPEN
+			return drv.MD_Stop, c.EB_DOOR_OPEN
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.MOVING
+			return drv.MD_Down, c.EB_MOVING
 		} else {
-			return drv.MD_Stop, c.IDLE
+			return drv.MD_Stop, c.EB_IDLE
 		}
 	case drv.MD_Down:
 		if ordersBelow(e) {
-			return drv.MD_Down, c.MOVING
+			return drv.MD_Down, c.EB_MOVING
 		} else if ordersHere(e) {
-			return drv.MD_Up, c.DOOR_OPEN
+			return drv.MD_Up, c.EB_DOOR_OPEN
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.MOVING
+			return drv.MD_Up, c.EB_MOVING
 		} else {
-			return drv.MD_Stop, c.IDLE
+			return drv.MD_Stop, c.EB_IDLE
 		}
 	case drv.MD_Stop:
 		if ordersHere(e) {
-			return drv.MD_Stop, c.DOOR_OPEN
+			return drv.MD_Stop, c.EB_DOOR_OPEN
 		} else if ordersAbove(e) {
-			return drv.MD_Up, c.MOVING
+			return drv.MD_Up, c.EB_MOVING
 		} else if ordersBelow(e) {
-			return drv.MD_Down, c.MOVING
+			return drv.MD_Down, c.EB_MOVING
 		} else {
-			return drv.MD_Stop, c.IDLE
+			return drv.MD_Stop, c.EB_IDLE
 		}
 	default:
-		return drv.MD_Stop, c.IDLE
+		return drv.MD_Stop, c.EB_IDLE
 	}
 }
 
