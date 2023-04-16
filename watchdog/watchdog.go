@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-const watchdogTimerDuration = time.Second * 20
+const watchdogTimerDuration = time.Second
 
 func Watchdog(ch_bark chan<- bool, ch_pet <-chan bool, moduleName string) {
 

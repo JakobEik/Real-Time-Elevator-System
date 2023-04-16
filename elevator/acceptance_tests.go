@@ -19,29 +19,24 @@ func AcceptanceTests(state c.ElevatorState) {
 func stateIsConsistent(state c.ElevatorState) {
 	// Behavior is not set to MD_Stop so the correct next direction is calculated
 	// Therefore this test would fail even though the system works
-	/*if state.Behavior == c.DOOR_OPEN && state.Direction != driver.MD_Stop {
+	/*if state.Behavior == c.EB_DOOR_OPEN && state.Direction != driver.MD_Stop {
 		fmt.Println(state)
 		fmt.Println("MOTOR SHOULD BE STOPPED WHEN DOOR IS OPEN")
 		failroutine.FailRoutine()
 	}*/
-	if state.Behavior == c.IDLE && !ordersIsEmpty(state) {
+	if state.Behavior == c.EB_IDLE && !ordersIsEmpty(state) {
 		fmt.Println(state)
-		fmt.Println("BEHAVIOR IS IDLE, ORDERS SHOULD BE EMPTY")
+		fmt.Println("BEHAVIOR IS EB_IDLE, ORDERS SHOULD BE EMPTY")
 		failroutine.FailRoutine()
 	}
-	if state.Behavior == c.MOVING && state.Direction == driver.MD_Stop {
-		fmt.Println("ELEVATOR IS MOVING BUT DIRECTION IS STOP")
+	if state.Behavior == c.EB_MOVING && state.Direction == driver.MD_Stop {
+		fmt.Println("ELEVATOR IS EB_MOVING BUT DIRECTION IS STOP")
 		failroutine.FailRoutine()
 	}
-	if state.Behavior == c.IDLE && state.Direction != driver.MD_Stop {
-		fmt.Println("ELEVATOR IS IDLE BUT DIRECTION IS NOT STOP")
+	if state.Behavior == c.EB_IDLE && state.Direction != driver.MD_Stop {
+		fmt.Println("ELEVATOR IS EB_IDLE BUT DIRECTION IS NOT STOP")
 		failroutine.FailRoutine()
 	}
-
-	/*if state.Behavior == c.DOOR_OPEN && state.Direction != driver.MD_Stop {
-		fmt.Println("DOOR IS OPEN BUT DIRECTION IS NOT STOP")
-		failroutine.FailRoutine()
-	}*/
 
 }
 
@@ -62,7 +57,7 @@ func directionIsValid(state c.ElevatorState) {
 }
 
 func behaviorIsValid(state c.ElevatorState) {
-	if state.Behavior != c.IDLE && state.Behavior != c.MOVING && state.Behavior != c.DOOR_OPEN {
+	if state.Behavior != c.EB_IDLE && state.Behavior != c.EB_MOVING && state.Behavior != c.EB_DOOR_OPEN {
 		b := strconv.Itoa(int(state.Behavior))
 		fmt.Println("BEHAVIOR IS NOT VALID : " + b)
 		failroutine.FailRoutine()

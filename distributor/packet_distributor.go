@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Packet Fields need to be exported so network module can use them
+// Packet the packet sendt over the network
 type Packet struct {
 	Msg            c.NetworkMessage
 	SequenceNumber uint32
@@ -22,13 +22,13 @@ type packetWithResendAttempts struct {
 const numOfRetries = 10
 const confirmationWaitDuration = time.Millisecond * 50
 
-// PacketDistributor distributes all messages between local and the network.
-// Also continues to send a packet if no acknowledgment of the message has been received.
+// PacketDistributor distributes all packets between the network and the local modules
+// If no acknowledgment for a packet has been received, this module will continue to send it until has been received.
 // There is one channel each for assigner and distributor, this is to prevent a data race
 func PacketDistributor(
 	ch_packetFromNetwork <-chan Packet,
 	ch_packetToNetwork chan<- Packet,
-	ch_msgToPack <-chan c.NetworkMessage,
+	ch_packMessage <-chan c.NetworkMessage,
 	ch_msgToAssigner, ch_msgToDistributor chan<- c.NetworkMessage) {
 
 	ch_bark := make(chan bool)
@@ -44,8 +44,8 @@ func PacketDistributor(
 		//Watchdog
 		case <-ch_bark:
 			ch_pet <- true
+		//_________________FROM NETWORK________________
 		case packet := <-ch_packetFromNetwork:
-			//fmt.Println("RECEIVE:", packet.Msg.Type)
 			if acceptPacket(packet) {
 				switch packet.Msg.Type {
 				// TO ASSIGNER
@@ -62,9 +62,9 @@ func PacketDistributor(
 					delete(packetsToBeConfirmed, packet.SequenceNumber)
 				}
 			}
-
-		case msg := <-ch_msgToPack:
-			packet := pack(msg, sequenceNumber)
+		//_________________TO NETWORK________________
+		case msg := <-ch_packMessage:
+			packet := packMessage(msg, sequenceNumber)
 			packetsToBeConfirmed[sequenceNumber] = packetWithResendAttempts{packet: packet, attempts: 1}
 			ch_packetToNetwork <- packet
 			sequenceNumber = incrementWithOverflow(sequenceNumber)
@@ -72,7 +72,6 @@ func PacketDistributor(
 		case <-resendPacketsTicker.C:
 			// Resends all packets that have not been confirmed yet every x milliseconds
 			for seqNum, packetAndAttempts := range packetsToBeConfirmed {
-				//fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
 				if packetAndAttempts.attempts > numOfRetries {
 					delete(packetsToBeConfirmed, seqNum)
 				} else {
@@ -101,7 +100,7 @@ func acceptPacket(packet Packet) bool {
 
 }
 
-func pack(message c.NetworkMessage, seqNum uint32) Packet {
+func packMessage(message c.NetworkMessage, seqNum uint32) Packet {
 	packet := Packet{Msg: message, SequenceNumber: seqNum}
 	return packet
 }
@@ -109,5 +108,5 @@ func pack(message c.NetworkMessage, seqNum uint32) Packet {
 func confirmMessage(packetReceived Packet) Packet {
 	receiverID := packetReceived.Msg.SenderID
 	msg := utils.CreateMessage(receiverID, true, c.MSG_RECEIVED)
-	return pack(msg, packetReceived.SequenceNumber)
+	return packMessage(msg, packetReceived.SequenceNumber)
 }
