@@ -4,6 +4,7 @@ import (
 	c "Project/config"
 	"Project/utils"
 	"Project/watchdog"
+	"fmt"
 	"time"
 )
 
@@ -20,6 +21,7 @@ type packetWithResendAttempts struct {
 }
 
 const numOfRetries = 10
+const confirmationWaitDuration = time.Millisecond * 50
 
 // PacketDistributor distributes all messages between local and the network.
 // Also continues to send a packet if no acknowledgment of the message has been received.
@@ -35,7 +37,7 @@ func PacketDistributor(
 	go watchdog.Watchdog(ch_bark, ch_pet, "Packet Distributor")
 
 	var sequenceNumber uint32 = 0
-	resendPacketsTicker := time.NewTicker(c.ConfirmationWaitDuration)
+	resendPacketsTicker := time.NewTicker(confirmationWaitDuration)
 	packetsToBeConfirmed := make(map[uint32]packetWithResendAttempts, 512) // map[seqNum]
 
 	for {
@@ -48,20 +50,12 @@ func PacketDistributor(
 			if acceptPacket(packet) {
 				switch packet.Msg.Type {
 				// TO ASSIGNER
-				case c.NEW_MASTER:
-					fallthrough
-				case c.LOCAL_STATE_CHANGED:
-					fallthrough
-				case c.UPDATE_GLOBAL_STATE:
-					fallthrough
-				case c.NEW_ORDER:
+				case c.NEW_MASTER, c.LOCAL_STATE_CHANGED, c.UPDATE_GLOBAL_STATE, c.NEW_ORDER:
 					ch_msgToAssigner <- packet.Msg
 					ch_packetToNetwork <- confirmMessage(packet)
 
 				// TO DISTRIBUTOR
-				case c.DO_ORDER:
-					fallthrough
-				case c.HALL_LIGHTS_UPDATE:
+				case c.DO_ORDER, c.HALL_LIGHTS_UPDATE:
 					ch_msgToDistributor <- packet.Msg
 					ch_packetToNetwork <- confirmMessage(packet)
 
@@ -78,9 +72,11 @@ func PacketDistributor(
 
 		case <-resendPacketsTicker.C:
 			// Resends all packets that have not been confirmed yet every x milliseconds
+			if len(packetsToBeConfirmed) > 0 {
+				println("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
+			}
 			for seqNum, packetAndAttempts := range packetsToBeConfirmed {
-				//print("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
-				//fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
+				fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
 				if packetAndAttempts.attempts > numOfRetries {
 					delete(packetsToBeConfirmed, seqNum)
 				} else {

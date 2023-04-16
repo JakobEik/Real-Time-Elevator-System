@@ -1,18 +1,16 @@
 package config
 
 import (
+	"Project/driver"
 	"fmt"
-	"time"
 )
 
-const N_FLOORS = 4
-const N_BUTTONS = 3
-const N_ELEVATORS = 3
-
-const ConfirmationWaitDuration = time.Millisecond * 30
-
-var ElevatorID int
-var MasterID = 0
+type ElevatorState struct {
+	Floor     int
+	Direction driver.MotorDirection
+	Behavior  Behavior
+	Orders    [][]bool
+}
 
 type Behavior int
 

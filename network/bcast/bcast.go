@@ -65,7 +65,6 @@ func Receiver(port int, chans ...interface{}) {
 		var ttj typeTaggedJSON
 		json.Unmarshal(buf[0:n], &ttj)
 		ch, ok := chansMap[ttj.TypeId]
-
 		checksum := crc32.ChecksumIEEE(ttj.JSON)
 		if !ok || checksum != ttj.CheckSum {
 			fmt.Println("Checksum mismatch! Sent:", ttj.CheckSum, ", calculated:", checksum)

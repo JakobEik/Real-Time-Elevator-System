@@ -3,12 +3,10 @@ package assigner
 import (
 	c "Project/config"
 	drv "Project/driver"
-	e "Project/elevator"
 	p "Project/network/peers"
 	"Project/utils"
 	"Project/watchdog"
 	"fmt"
-	"math/rand"
 	"strconv"
 )
 
@@ -21,56 +19,54 @@ func Assigner(
 	ch_bark := make(chan bool)
 	ch_pet := make(chan bool)
 	go watchdog.Watchdog(ch_bark, ch_pet, "Assigner")
-	//globalStateUpdated := false
 	globalState := utils.InitGlobalState()
-	println("LENGTH GLOBAL STATE:", len(globalState))
+	isMaster := true
 	var peersOnline []int
+
 	for {
 		select {
-		//Watchdog
+		//________ WATCHDOG ________
 		case <-ch_bark:
 			ch_pet <- true
-
+		//________ NEW MESSAGE ________
 		case m := <-ch_msgToAssigner:
 			//fmt.Println("MASTER RECEIVE:", m.Type)
-			msg := utils.DecodeMessage(m)
+			msg := utils.DecodeContent(m)
 			switch msg.Type {
 			// ============ MASTER ===========
 			case c.NEW_ORDER:
-				if isElevatorOffline(msg.SenderID, peersOnline) || c.ElevatorID != c.MasterID {
+				if !isMaster {
 					continue
 				}
 				order := msg.Content.(drv.ButtonEvent)
-				bestScoreElevator := getBestElevatorForOrder(globalState, order, peersOnline)
-				doOrder := utils.CreateMessage(bestScoreElevator, order, c.DO_ORDER)
+				bestElevatorID := getBestElevatorForOrder(globalState, order, peersOnline)
+				doOrder := utils.CreateMessage(bestElevatorID, order, c.DO_ORDER)
 				ch_msgToPack <- doOrder
-				fmt.Println("ORDER to elevator:", bestScoreElevator)
-
+			// ============ MASTER ===========
 			case c.LOCAL_STATE_CHANGED:
-				if c.ElevatorID != c.MasterID {
+				if !isMaster {
 					continue
 				}
-				state := msg.Content.(e.ElevatorState)
+				state := msg.Content.(c.ElevatorState)
 				elevatorID := msg.SenderID
 				globalState[elevatorID] = state
-
 				for _, ID := range peersOnline {
 					globalStateUpdate := utils.CreateMessage(ID, globalState, c.UPDATE_GLOBAL_STATE)
 					ch_msgToPack <- globalStateUpdate
 
-					globalHallOrders := getGlobalHallOrders(globalState, peersOnline)
+					globalHallOrders := getHallOrders(globalState, peersOnline)
 					hallLightsUpdate := utils.CreateMessage(ID, globalHallOrders, c.HALL_LIGHTS_UPDATE)
 					ch_msgToPack <- hallLightsUpdate
 				}
-
+			// ============ MASTER ===========
 			case c.NEW_MASTER:
 				println("NEW MASTER")
-				if c.ElevatorID != c.MasterID {
+				if !isMaster {
 					continue
 				}
-				println("UPDATE NEW MASTER")
-				states := msg.Content.([]e.ElevatorState)
-				globalState = states
+				fmt.Println("UPDATE THIS TO MASTER")
+				backupGlobalState := msg.Content.([]c.ElevatorState)
+				globalState = backupGlobalState
 				master := strconv.Itoa(c.ElevatorID)
 				// When master goes online, this function is needed to update its cab calls
 				// This is because when ch_peerUpdate receives the first time, the global state of the master is initialized.
@@ -79,73 +75,59 @@ func Assigner(
 
 			// ============ SLAVE ===========
 			case c.UPDATE_GLOBAL_STATE:
-				if c.ElevatorID == c.MasterID {
+				if isMaster {
 					continue
 				}
-				states := msg.Content.([]e.ElevatorState)
+				states := msg.Content.([]c.ElevatorState)
 				globalState = states
-
 			}
 
+		//________ PEER UPDATE ________
 		case update := <-ch_peerUpdate:
 
+			// If an elevator loses internet connection, this will notify the local FSM to update its own lights
+			if len(update.Peers) == 0 {
+				ch_offNetwork <- true
+			} else {
+				ch_offNetwork <- false
+			}
 			fmt.Println("PEER UPDATE:", update)
 			peersOnline = stringArrayToIntArray(update.Peers)
 			oldMaster := c.MasterID
 			// Master is always assigned to the elevator with the lowest ID on the network.
 			// This is to make sure everyone that is connected always agrees on whom the master is
 			c.MasterID = getMaster(peersOnline)
+			isMaster = c.ElevatorID == c.MasterID
 			if c.MasterID != oldMaster && !isNewElevator(c.ElevatorID, update) {
-				println("SEND STATE TO NEW MASTER")
 				// If there is a new master, the slave elevators will send him their backup global states
+				println("UPDATE NEW MASTER")
 				newMasterUpdate := utils.CreateMessage(c.MasterID, globalState, c.NEW_MASTER)
 				ch_msgToPack <- newMasterUpdate
 			}
 
-			println("MASTER:", c.MasterID)
+			// ============ MASTER ===========
+			if isMaster {
+				// HANDLE LOST PEERS
+				lostPeersIDs := stringArrayToIntArray(update.Lost)
+				lostOrders := getHallOrders(globalState, lostPeersIDs)
+				ordersToDistribute := makeMessagesFromOrders(lostOrders)
+				for _, message := range ordersToDistribute {
+					ch_msgToPack <- message
+				}
+				globalState = updateGlobalState(globalState, lostPeersIDs)
 
-			if c.ElevatorID == c.MasterID {
-				globalState = lostPeersUpdate(update.Lost, globalState, ch_msgToPack)
+				// HANDLE NEW PEERS
 				newPeerUpdate(update.New, globalState, ch_msgToPack, peersOnline)
+
 			}
 
-			if len(peersOnline) == 0 {
-				ch_offNetwork <-true
-			}else{
-				ch_offNetwork <-false
-			}
-		}
-		//printElevFloors(globalState)
-
-	}
-
-}
-
-func printElevFloors(globalState []e.ElevatorState) {
-	println()
-	println(rand.Int())
-	for ID, state := range globalState {
-		fmt.Println("ELEVATOR :", ID, ", FLOOR :", state.Floor)
-	}
-}
-
-func lostPeersUpdate(lostPeers []string, globalState []e.ElevatorState, ch_msgToPack chan<- c.NetworkMessage) []e.ElevatorState{
-	newGlobalState := globalState
-	// Distribute orders from lost peers if there are any
-	if len(lostPeers) > 0 {
-		IDs := stringArrayToIntArray(lostPeers)
-		for _, elevatorID := range IDs {
-			println("DISTRIBUTE ELEVATOR :", elevatorID)
-			newGlobalState[elevatorID] = distributeOrders(globalState[elevatorID], ch_msgToPack)
 		}
 	}
-	return newGlobalState
-
 }
 
 func newPeerUpdate(
 	newPeer string,
-	globalState []e.ElevatorState,
+	globalState []c.ElevatorState,
 	ch_msgToPack chan<- c.NetworkMessage,
 	peersOnline []int) {
 	if len(newPeer) > 0 {
@@ -153,7 +135,7 @@ func newPeerUpdate(
 		stateUpdate := utils.CreateMessage(elevatorID, globalState, c.UPDATE_GLOBAL_STATE)
 		ch_msgToPack <- stateUpdate
 
-		hallOrders := getGlobalHallOrders(globalState, peersOnline)
+		hallOrders := getHallOrders(globalState, peersOnline)
 		hallOrdersUpdate := utils.CreateMessage(elevatorID, hallOrders, c.HALL_LIGHTS_UPDATE)
 		ch_msgToPack <- hallOrdersUpdate
 
