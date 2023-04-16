@@ -3,6 +3,7 @@ package distributor
 import (
 	c "Project/config"
 	drv "Project/driver"
+	e "Project/elevator"
 	"Project/utils"
 	"Project/watchdog"
 )
@@ -43,7 +44,7 @@ func Distributor(
 			}
 
 		case state := <-ch_localStateUpdated:
-			//e.AcceptanceTests(state)
+			e.AcceptanceTests(state)
 			msg := utils.CreateMessage(c.MasterID, state, c.LOCAL_STATE_CHANGED)
 			ch_msgToPack <- msg
 
@@ -62,7 +63,7 @@ func Distributor(
 			}
 
 		case failure := <-ch_unavailable:
-			println("FAILURE =", failure)
+			//println("FAILURE =", failure)
 			ch_peerTxEnable <- !failure
 		}
 	}

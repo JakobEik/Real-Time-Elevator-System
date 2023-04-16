@@ -17,6 +17,8 @@ func AcceptanceTests(state c.ElevatorState) {
 }
 
 func stateIsConsistent(state c.ElevatorState) {
+	// Behavior is not set to MD_Stop so the correct next direction is calculated
+	// Therefore this test would fail even though the system works
 	/*if state.Behavior == c.DOOR_OPEN && state.Direction != driver.MD_Stop {
 		fmt.Println(state)
 		fmt.Println("MOTOR SHOULD BE STOPPED WHEN DOOR IS OPEN")

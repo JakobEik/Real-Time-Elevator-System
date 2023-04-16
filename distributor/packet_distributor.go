@@ -4,7 +4,6 @@ import (
 	c "Project/config"
 	"Project/utils"
 	"Project/watchdog"
-	"fmt"
 	"time"
 )
 
@@ -72,11 +71,8 @@ func PacketDistributor(
 
 		case <-resendPacketsTicker.C:
 			// Resends all packets that have not been confirmed yet every x milliseconds
-			if len(packetsToBeConfirmed) > 0 {
-				println("RESENDING PACKETS, AMOUNT:", len(packetsToBeConfirmed))
-			}
 			for seqNum, packetAndAttempts := range packetsToBeConfirmed {
-				fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
+				//fmt.Println(", TYPE:", packetsToBeConfirmed[seqNum].packet.Msg.Type)
 				if packetAndAttempts.attempts > numOfRetries {
 					delete(packetsToBeConfirmed, seqNum)
 				} else {

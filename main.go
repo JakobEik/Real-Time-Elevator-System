@@ -6,20 +6,19 @@ import (
 	d "Project/distributor"
 	drv "Project/driver"
 	e "Project/elevator"
+	"Project/failroutine"
 	"Project/network/bcast"
 	"Project/network/peers"
 	"os"
 	"strconv"
 )
 
-const bufferSize = 512
+const bufferSize = 128
 
 func main() {
 	port := os.Args[1]
 	config.ElevatorID, _ = strconv.Atoi(os.Args[2])
 	ElevatorStrID := os.Args[2]
-
-	// exec.Command("cmd", "/C", "start", "powershell", "go", "run", "main.go 9999 0").Run()
 
 	// channels for Network
 	ch_peerUpdate := make(chan peers.PeerUpdate)
@@ -62,9 +61,6 @@ func main() {
 	go peers.Transmitter(34444, ElevatorStrID, ch_peerTxEnable)
 	go peers.Receiver(34444, ch_peerUpdate)
 
-	// Error handling
-	// go failRoutine(port, ElevatorStrID, ch_failure)
-
 	go d.Distributor(
 		ch_msgToDistributor,
 		ch_msgToPack,
@@ -97,7 +93,8 @@ func main() {
 		ch_hallLights,
 		ch_unavailable,
 		ch_offNetwork)
+
 	println("EXIT PROGRAM")
-	//failroutine.FailRoutine()
+	failroutine.FailRoutine()
 
 }
